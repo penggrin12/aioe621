@@ -27,6 +27,12 @@ class Posts(Endpoint):
         self,
         id: int,
     ) -> Post:
+        """
+        :raises ValueError: If the post id is invalid. (less or equal to zero)
+        :raises NotFound: If the post with the requested id doesn't exist.
+        """
+        if id <= 0:
+            raise ValueError("The post ID must not be less than or equal to zero.")
         return (
             await self._request_model(
                 _PostsOnePostResponse,

@@ -145,3 +145,8 @@ class _PostsListResponse(APIModel):
 
 class _PostsOnePostResponse(APIModel):
     post: Post
+
+
+class _ErrorResponse(APIModel):
+    success: Literal[False]
+    reason: str
