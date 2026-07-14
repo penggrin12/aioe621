@@ -1,15 +1,17 @@
-﻿from ..schemas import Post, _PostsListResponse, _PostsOnePostResponse
+﻿from typing import Iterable
+
+from ..schemas import Post, _PostsListResponse, _PostsOnePostResponse
 from .endpoint import Endpoint
 
 
 class Posts(Endpoint):
     async def list(
         self,
-        tags: list[str] | str,
+        tags: Iterable[str] | str,
         limit: int | None = None,
         page: int | None = None,
-    ) -> list[Post]:
-        if isinstance(tags, list):
+    ) -> tuple[Post, ...]:
+        if not isinstance(tags, str):
             tags = " ".join(tags)
 
         return (
