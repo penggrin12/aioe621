@@ -1,7 +1,8 @@
 ﻿import typing
+from typing import overload
 
 import httpx
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 from aioe621 import endpoints
 from aioe621.exceptions import (
@@ -78,18 +79,31 @@ class Client:
         raise self._find_error(response)
 
     _MT = typing.TypeVar("_MT", bound="BaseModel")
+    _T = typing.TypeVar("_T")
+
+    @overload
+    async def _request_model(
+        self, model: TypeAdapter[_T], method: str, url: str, **kwargs
+    ) -> _T: ...
+
+    @overload
+    async def _request_model(
+        self, model: type[_MT], method: str, url: str, **kwargs
+    ) -> _MT: ...
 
     async def _request_model(
         self,
-        model: type[_MT],
+        model: type[_MT] | TypeAdapter[_T],
         method: str,
         url: str,
         **kwargs,
-    ) -> _MT:
-        return model.model_validate_json(
-            await self._request(
-                method=method,
-                url=url,
-                **kwargs,
-            )
+    ) -> _MT | _T:
+        json: str = await self._request(
+            method=method,
+            url=url,
+            **kwargs,
         )
+        if isinstance(model, TypeAdapter):
+            return model.validate_json(json, strict=True)
+        else:
+            return model.model_validate_json(json, strict=True)

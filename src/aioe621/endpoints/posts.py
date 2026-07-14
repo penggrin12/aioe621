@@ -1,7 +1,9 @@
 ﻿from typing import Iterable
 
+from pydantic import TypeAdapter
+
 from aioe621.endpoints.endpoint import Endpoint
-from aioe621.schemas import Post, _PostsListResponse, _PostsOnePostResponse
+from aioe621.schemas import Post
 
 
 class Posts(Endpoint):
@@ -14,16 +16,16 @@ class Posts(Endpoint):
         if not isinstance(tags, str):
             tags = " ".join(tags)
 
-        return (
-            await self._request_model(
-                _PostsListResponse,
-                "GET",
-                "/posts.json",
-                tags=tags,
-                limit=limit,
-                page=page,
-            )
-        ).posts
+        return await self._request_model(
+            TypeAdapter(tuple[Post, ...]),
+            "GET",
+            "/posts.json",
+            tags=tags,
+            limit=limit,
+            page=page,
+            v2=True,
+            mode="extended",
+        )
 
     search = list
 
@@ -37,21 +39,21 @@ class Posts(Endpoint):
         """
         if id <= 0:
             raise ValueError("The post ID must not be less than or equal to zero.")
-        return (
-            await self._request_model(
-                _PostsOnePostResponse,
-                "GET",
-                f"/posts/{id}.json",
-            )
-        ).post
+        return await self._request_model(
+            Post,
+            "GET",
+            f"/posts/{id}.json",
+            v2=True,
+            mode="extended",
+        )
 
     async def random(
         self,
     ) -> Post:
-        return (
-            await self._request_model(
-                _PostsOnePostResponse,
-                "GET",
-                "/posts/random.json",
-            )
-        ).post
+        return await self._request_model(
+            Post,
+            "GET",
+            "/posts/random.json",
+            v2=True,
+            mode="extended",
+        )

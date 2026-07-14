@@ -1,13 +1,18 @@
 ﻿from datetime import datetime
 from enum import Enum
 from functools import cached_property
-from typing import Literal, Mapping, NamedTuple
+from typing import Literal, NamedTuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class APIModel(BaseModel):
-    model_config = ConfigDict(frozen=True, ignored_types=(cached_property,))
+    model_config = ConfigDict(
+        frozen=True,
+        ignored_types=(cached_property,),
+        strict=True,
+        extra="forbid",
+    )
 
 
 class Auth(NamedTuple):
@@ -15,41 +20,26 @@ class Auth(NamedTuple):
     api_key: str
 
 
-class BaseFile(APIModel):
+class FileDimensions(APIModel):
     width: int
     height: int
-    url: str | None = None  # Safest to make URL optional (deleted posts hide URLs)
 
 
-class File(BaseFile):
+class BaseFile(FileDimensions):
+    url: str | None
+
+
+class PreviewFile(FileDimensions):
+    jpg: str | None
+    webp: str | None
+
+
+class FilesMeta(APIModel):
+    md5: str
     ext: str
     size: int
-    md5: str
-
-
-class PreviewFile(BaseFile):
-    alt: str | None = None
-
-
-class VideoAlternate(APIModel):
-    fps: float
-    codec: str
-    size: int
-    width: int
-    height: int
-    url: str | None = None
-
-
-class Alternates(APIModel):
-    has: bool = False
-    original: VideoAlternate | None = None
-    variants: Mapping[str, VideoAlternate] = Field(default_factory=dict)
-    samples: Mapping[str, VideoAlternate] = Field(default_factory=dict)
-
-
-class SampleFile(PreviewFile):
-    has: bool
-    alternates: Alternates
+    duration: float | None
+    has_sample: bool
 
 
 class PostScore(APIModel):
@@ -93,16 +83,62 @@ class PostFlags(APIModel):
     deleted: bool
 
 
-class Rating(str, Enum):
+class PostRating(str, Enum):
     SAFE = "s"
     QUESTIONABLE = "q"
     EXPLICIT = "e"
 
 
-class Relationships(APIModel):
-    parent_id: int | None = None
-    has_children: bool
-    has_active_children: bool
+class VideoFile(BaseFile):
+    fps: float
+    codec: str  # TODO: "vp9" or "avc1.4D401E" or ...?
+    size: int
+
+
+class VideoVariants(APIModel):
+    mp4: VideoFile | None = None
+    # TODO: any more?
+
+
+class VideoSamples(APIModel):
+    p480: VideoFile | None = Field(alias="480p", default=None)
+    p720: VideoFile | None = Field(alias="720p", default=None)
+
+
+class Video(APIModel):
+    has: Literal[True]
+    original: VideoFile
+    variants: VideoVariants
+    samples: VideoSamples
+
+
+class PostFiles(APIModel):
+    meta: FilesMeta
+    original: BaseFile
+    preview: PreviewFile
+    sample: PreviewFile
+    video: Video | None = None
+
+
+class PostStats(APIModel):
+    score: PostScore
+    fav_count: int
+    is_favorited: bool
+    vote: int
+    comment_count: int
+    hotness: float
+
+
+class PostHas(APIModel):
+    parent: bool
+    children: bool
+    active_children: bool
+    notes: bool
+    sample: bool
+
+
+class PostRelationships(APIModel):
+    parent_id: int | None
     children: tuple[int, ...]
 
 
@@ -110,41 +146,21 @@ class Post(APIModel):
     id: int
     created_at: datetime
     updated_at: datetime
-
-    file: File
-    preview: PreviewFile
-    sample: SampleFile
-
-    score: PostScore
-    tags: PostTags
-    locked_tags: tuple[str, ...]
     change_seq: int
-    flags: PostFlags
-    rating: Rating
-
-    fav_count: int
-    sources: tuple[str, ...]
-    pools: tuple[int, ...]
-    relationships: Relationships
-
-    approver_id: int | None = None
+    files: PostFiles
     uploader_id: int
     uploader_name: str
+    approver_id: int | None
+    stats: PostStats
+    flags: PostFlags
+    has: PostHas
+    relationships: PostRelationships
+    pools: tuple[int, ...]
+    rating: PostRating
+    locked_tags: tuple[str, ...]
+    sources: tuple[str, ...]
     description: str
-    comment_count: int
-    is_favorited: bool
-
-    vote: int
-    has_notes: bool
-    duration: float | None = None
-
-
-class _PostsListResponse(APIModel):
-    posts: tuple[Post, ...]
-
-
-class _PostsOnePostResponse(APIModel):
-    post: Post
+    tags: PostTags
 
 
 class _ErrorResponse(APIModel):
