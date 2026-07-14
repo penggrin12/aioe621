@@ -32,7 +32,7 @@ class PreviewFile(BaseFile):
 
 
 class VideoAlternate(APIModel):
-    fps: int
+    fps: float
     codec: str
     size: int
     width: int
