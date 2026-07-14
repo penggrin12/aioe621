@@ -1,8 +1,8 @@
 ﻿import base64
 import unittest
-from unittest.mock import MagicMock, patch
 
 import httpx
+import respx
 from pydantic import ValidationError
 
 from aioe621 import Auth, Client
@@ -37,17 +37,18 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         resp = next(self.client.session.auth.auth_flow(httpx.Request("", "")))
         self.assertEqual(resp.headers["Authorization"], MOCK_AUTHORIZATION_HEADER)
 
-    @patch("httpx.AsyncClient.request")
-    async def test_posts_get(self, mock_request: MagicMock) -> None:
-        mock_request.return_value = httpx.Response(200, text=MOCK_POST_JSON)
+    @respx.mock
+    async def test_posts_get(self) -> None:
+        url = f"{self.client.E621_BASE_URL}/posts/4842101.json"
+        route = respx.get(url).mock(
+            return_value=httpx.Response(200, text=MOCK_POST_JSON)
+        )
 
         post = await self.client.posts.get(id=4842101)
-        mock_request.assert_called_once_with(
-            method="GET",
-            url="/posts/4842101.json",
-            params={},
-            headers={"User-Agent": self.client.user_agent},
-        )
+
+        self.assertTrue(route.called)
+        request = route.calls.last.request
+        self.assertEqual(request.headers.get("User-Agent"), self.client.user_agent)
 
         self.assertIsInstance(post, Post)
         self.assertEqual(post.id, 4842101)
@@ -59,9 +60,10 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(post.description, "me fr")
         self.assertEqual(post.rating, Rating.SAFE)
 
-    @patch("httpx.AsyncClient.request")
-    async def test_posts_get_immutability(self, mock_request: MagicMock) -> None:
-        mock_request.return_value = httpx.Response(200, text=MOCK_POST_JSON)
+    @respx.mock
+    async def test_posts_get_immutability(self) -> None:
+        url = f"{self.client.E621_BASE_URL}/posts/4842101.json"
+        respx.get(url).mock(return_value=httpx.Response(200, text=MOCK_POST_JSON))
 
         post = await self.client.posts.get(id=4842101)
 
@@ -69,26 +71,28 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
             # pyrefly: ignore [read-only]
             post.id = 0
 
-    @patch("httpx.AsyncClient.request")
-    async def test_posts_get_404(self, mock_request: MagicMock) -> None:
-        status_code, method, url = 404, "GET", "/post/999999999.json"
+    @respx.mock
+    async def test_posts_get_404(self) -> None:
+        status_code, method = 404, "GET"
+        url = f"{self.client.E621_BASE_URL}/posts/999999999.json"
 
-        mock_request.return_value = httpx.Response(
-            404, text=MOCK_404_JSON, request=httpx.Request(method, url)
+        route = respx.request(method, url).mock(
+            return_value=httpx.Response(status_code, text=MOCK_404_JSON)
         )
 
         with self.assertRaises(NotFoundError) as cm:
             await self.client.posts.get(id=999999999)
+
+        self.assertTrue(route.called)
         self.assertIn(str(status_code), str(cm.exception))
         self.assertIn(f"{method} {url}", str(cm.exception))
 
-    @patch("httpx.AsyncClient.request")
-    async def test_posts_get_invalid_id(self, mock_request: MagicMock) -> None:
-        mock_request.return_value = None
-
+    @respx.mock
+    async def test_posts_get_invalid_id(self) -> None:
         with self.assertRaises(ValueError):
             await self.client.posts.get(id=-10)
-        mock_request.assert_not_called()
+
+        self.assertEqual(len(respx.calls), 0)
 
     async def asyncTearDown(self) -> None:
         await self.client.session.aclose()
