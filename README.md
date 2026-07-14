@@ -1,11 +1,14 @@
-﻿# aioe621 ![uv](https://img.shields.io/badge/uv-261230.svg?logo=uv&logoColor=#de5fe9)
+﻿# aioe621 ![GitHub Tag](https://img.shields.io/github/v/tag/penggrin12/aioe621?label=version)
 
+![uv](https://img.shields.io/badge/uv-261230.svg?logo=uv&logoColor=#de5fe9)
 ![PyPI Python Version](https://img.shields.io/pypi/pyversions/aioe621)
 
 ![GitHub License](https://img.shields.io/github/license/penggrin12/aioe621)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/penggrin12/aioe621/release.yml)
 
 A simple asynchronous httpx+pydantic wrapper over the E621's API
+
+The API is considered unstable for minor version increments until 1.0.0
 
 ## Quickstart
 
