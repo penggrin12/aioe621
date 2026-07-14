@@ -36,6 +36,6 @@ asyncio.run(main())
 
 ## Currently implemented
 
-- [x] `GET /posts.json` via `.posts.list() -> list[Post]`
-- [x] `GET /posts/{id}.json` via `.posts.get(id: int) -> Post`
-- [x] `GET /posts/random.json` via `.posts.random() -> Post`
+- [x] `GET /posts.json` via `.posts.list`
+- [x] `GET /posts/{id}.json` via `.posts.get`
+- [x] `GET /posts/random.json` via `.posts.random`
