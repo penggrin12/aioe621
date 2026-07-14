@@ -3,6 +3,7 @@ name = "aioe621"
 version = "0.2.0"
 description = "A simple asynchronous httpx+pydantic wrapper over the E621's API"
 license = { file = "LICENSE" }
+readme = "README.md"
 keywords = ["async", "httpx", "e621"]
 authors = [
     { name = "penggrin12", email = "miner.sidor@gmail.com" }
