@@ -1,4 +1,15 @@
-﻿import httpx
+﻿import typing
+
+if typing.TYPE_CHECKING:
+    from httpx import Response
+
+__all__: list[str] = [
+    "WrapperError",
+    "AuthenticationError",
+    "APIError",
+    "NotFoundError",
+    "AccessDeniedError",
+]
 
 
 class WrapperError(Exception):
@@ -16,7 +27,7 @@ class AuthenticationError(WrapperError):
 
 
 class APIError(Exception):
-    def __init__(self, message: str, response: httpx.Response) -> None:
+    def __init__(self, message: str, response: "Response") -> None:
         self.method = response.request.method
         self.url = response.request.url
         super().__init__(
@@ -25,10 +36,10 @@ class APIError(Exception):
 
 
 class NotFoundError(APIError):
-    def __init__(self, response: httpx.Response) -> None:
+    def __init__(self, response: "Response") -> None:
         super().__init__("Not found.", response)
 
 
 class AccessDeniedError(APIError):
-    def __init__(self, response: httpx.Response) -> None:
+    def __init__(self, response: "Response") -> None:
         super().__init__("Access denied.", response)

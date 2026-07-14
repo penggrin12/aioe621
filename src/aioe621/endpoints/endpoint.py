@@ -1,7 +1,7 @@
 ﻿import typing
 
 if typing.TYPE_CHECKING:
-    from ..client import Client
+    from aioe621.client import Client
 
 
 class Endpoint:

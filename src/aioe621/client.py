@@ -3,11 +3,14 @@
 import httpx
 from pydantic import BaseModel
 
-from aioe621.exceptions import AccessDeniedError
-
-from .endpoints.posts import Posts
-from .exceptions import APIError, AuthenticationError, NotFoundError
-from .schemas import _ErrorResponse
+from aioe621 import endpoints
+from aioe621.exceptions import (
+    AccessDeniedError,
+    APIError,
+    AuthenticationError,
+    NotFoundError,
+)
+from aioe621.schemas import _ErrorResponse
 
 if typing.TYPE_CHECKING:
     from .schemas import Auth
@@ -35,7 +38,7 @@ class Client:
             **session_kwargs,
         )
 
-        self.posts = Posts(self)
+        self.posts = endpoints.Posts(self)
 
     def _get_headers(self) -> dict[str, str]:
         return {"User-Agent": self.user_agent}

@@ -1,7 +1,7 @@
 ﻿from typing import Iterable
 
-from ..schemas import Post, _PostsListResponse, _PostsOnePostResponse
-from .endpoint import Endpoint
+from aioe621.endpoints.endpoint import Endpoint
+from aioe621.schemas import Post, _PostsListResponse, _PostsOnePostResponse
 
 
 class Posts(Endpoint):
