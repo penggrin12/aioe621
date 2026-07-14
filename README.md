@@ -14,12 +14,13 @@ from aioe621 import Client, Auth
 from aioe621.schemas import Post
 import asyncio
 
+# authentication is only needed for some endpoints
 auth = Auth(
     username="hexerade",
     api_key="1nHrmzmsvJf26EhU1F7CjnjC",
 )
 
-# all parameters are optional
+# all other Client parameters are also optional
 client = Client(
     auth=auth,
     user_agent="MyProject/1.0 (by username on e621)"
