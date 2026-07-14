@@ -24,8 +24,8 @@ jobs:
       - name: Build
         run: uv build
       - name: Unittest (wheel)
-        run: uv run --isolated --no-project --with dist/*.whl python -m unittest tests.test
+        run: uv run --isolated --no-project --with dist/*.whl python -m unittest tests.test_mock
       - name: Unittest (source distribution)
-        run: uv run --isolated --no-project --with dist/*.tar.gz python -m unittest tests.test
+        run: uv run --isolated --no-project --with dist/*.tar.gz python -m unittest tests.test_mock
       - name: Publish
         run: uv publish
