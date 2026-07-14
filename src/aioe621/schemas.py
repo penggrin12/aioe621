@@ -1,8 +1,13 @@
 ﻿from datetime import datetime
 from enum import Enum
-from typing import NamedTuple
+from functools import cached_property
+from typing import Literal, Mapping, NamedTuple
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class APIModel(BaseModel):
+    model_config = ConfigDict(frozen=True, ignored_types=(cached_property,))
 
 
 class Auth(NamedTuple):
@@ -10,7 +15,7 @@ class Auth(NamedTuple):
     api_key: str
 
 
-class BaseFile(BaseModel):
+class BaseFile(APIModel):
     width: int
     height: int
     url: str | None = None  # Safest to make URL optional (deleted posts hide URLs)
@@ -26,7 +31,7 @@ class PreviewFile(BaseFile):
     alt: str | None = None
 
 
-class VideoAlternate(BaseModel):
+class VideoAlternate(APIModel):
     fps: int
     codec: str
     size: int
@@ -35,11 +40,11 @@ class VideoAlternate(BaseModel):
     url: str | None = None
 
 
-class Alternates(BaseModel):
+class Alternates(APIModel):
     has: bool = False
     original: VideoAlternate | None = None
-    variants: dict[str, VideoAlternate] = Field(default_factory=dict)
-    samples: dict[str, VideoAlternate] = Field(default_factory=dict)
+    variants: Mapping[str, VideoAlternate] = Field(default_factory=dict)
+    samples: Mapping[str, VideoAlternate] = Field(default_factory=dict)
 
 
 class SampleFile(PreviewFile):
@@ -47,25 +52,39 @@ class SampleFile(PreviewFile):
     alternates: Alternates
 
 
-class PostScore(BaseModel):
+class PostScore(APIModel):
     up: int
     down: int
     total: int
 
 
-class PostTags(BaseModel):
-    general: list[str]
-    artist: list[str]
-    contributor: list[str]
-    copyright: list[str]
-    character: list[str]
-    species: list[str]
-    invalid: list[str]
-    meta: list[str]
-    lore: list[str]
+class PostTags(APIModel):
+    general: tuple[str, ...]
+    artist: tuple[str, ...]
+    contributor: tuple[str, ...]
+    copyright: tuple[str, ...]
+    character: tuple[str, ...]
+    species: tuple[str, ...]
+    invalid: tuple[str, ...]
+    meta: tuple[str, ...]
+    lore: tuple[str, ...]
+
+    @cached_property
+    def all(self) -> tuple[str, ...]:
+        return (
+            self.general
+            + self.artist
+            + self.contributor
+            + self.copyright
+            + self.character
+            + self.species
+            + self.invalid
+            + self.meta
+            + self.lore
+        )
 
 
-class PostFlags(BaseModel):
+class PostFlags(APIModel):
     pending: bool
     flagged: bool
     note_locked: bool
@@ -80,14 +99,14 @@ class Rating(str, Enum):
     EXPLICIT = "e"
 
 
-class Relationships(BaseModel):
+class Relationships(APIModel):
     parent_id: int | None = None
     has_children: bool
     has_active_children: bool
-    children: list[int]
+    children: tuple[int, ...]
 
 
-class Post(BaseModel):
+class Post(APIModel):
     id: int
     created_at: datetime
     updated_at: datetime
@@ -98,14 +117,14 @@ class Post(BaseModel):
 
     score: PostScore
     tags: PostTags
-    locked_tags: list[str]
+    locked_tags: tuple[str, ...]
     change_seq: int
     flags: PostFlags
     rating: Rating
 
     fav_count: int
-    sources: list[str]
-    pools: list[int]
+    sources: tuple[str, ...]
+    pools: tuple[int, ...]
     relationships: Relationships
 
     approver_id: int | None = None
@@ -120,9 +139,9 @@ class Post(BaseModel):
     duration: float | None = None
 
 
-class _PostsListResponse(BaseModel):
-    posts: list[Post]
+class _PostsListResponse(APIModel):
+    posts: tuple[Post, ...]
 
 
-class _PostsOnePostResponse(BaseModel):
+class _PostsOnePostResponse(APIModel):
     post: Post
