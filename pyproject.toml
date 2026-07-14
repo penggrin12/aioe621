@@ -1,0 +1,38 @@
+[project]
+name = "aioe621"
+version = "0.1.0"
+description = "A simple asynchronous httpx+pydantic wrapper over the E621's API"
+license = { file = "LICENSE" }
+keywords = ["async", "httpx", "e621"]
+authors = [
+    { name = "penggrin12", email = "miner.sidor@gmail.com" }
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Framework :: AsyncIO",
+    "Framework :: Pydantic",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "httpx>=0.28.1",
+    "orjson>=3.11.9",
+    "pydantic>=2.13.4",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.24,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.21",
+    "pyrefly>=0.60.0",
+]
