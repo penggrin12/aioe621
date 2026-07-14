@@ -25,6 +25,8 @@ class Posts(Endpoint):
             )
         ).posts
 
+    search = list
+
     async def get(
         self,
         id: int,
