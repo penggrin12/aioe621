@@ -1,10 +1,13 @@
-﻿from typing import Sequence
+﻿from typing import TYPE_CHECKING, Sequence
 
 from pydantic import TypeAdapter
 
 from aioe621.endpoints.endpoint import Endpoint
 from aioe621.enums import TagSortOrder
 from aioe621.schemas.tags import Tag, TagCategory
+
+if TYPE_CHECKING:
+    from aioe621.endpoints.endpoint import TagType
 
 
 class Tags(Endpoint):
@@ -38,9 +41,21 @@ class Tags(Endpoint):
 
     search = list
 
+    async def get_by_name(
+        self,
+        name: "TagType",
+    ) -> Tag | None:
+        tags: Sequence[Tag] = await self.list(query=str(name), limit=1)
+        return tags[0] if len(tags) > 0 else None
+
     async def get(
         self,
-        name: str,
-    ) -> Tag | None:
-        tags: Sequence[Tag] = await self.list(query=name, limit=1)
-        return tags[0] if len(tags) > 0 else None
+        id: int,
+    ) -> Tag:
+        if id <= 0:
+            raise ValueError("The tag ID must not be less than or equal to zero.")
+        return await self._request_model(
+            Tag,
+            "GET",
+            f"/tags/{id}.json",
+        )

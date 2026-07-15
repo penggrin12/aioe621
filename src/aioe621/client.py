@@ -37,7 +37,11 @@ class Client:
         )
         self.session: httpx.AsyncClient = session or httpx.AsyncClient(
             base_url=base_url,
-            auth=httpx.BasicAuth(*self.auth) if self.auth else None,
+            auth=(
+                httpx.BasicAuth(self.auth.username, self.auth.api_key)
+                if self.auth
+                else None
+            ),
             **session_kwargs,
         )
 
