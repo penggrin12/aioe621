@@ -55,3 +55,16 @@ class TagCategory(int, Enum):
     INVALID = 6
     META = 7
     LORE = 8
+
+
+class PoolCategory(str, Enum):
+    SERIES = "series"
+    COLLECTION = "collection"
+
+
+class PoolSortOrder(str, Enum):
+    ID_ASCENDING = "id_asc"
+    ID_DESCENDING = "id_desc"
+    NAME = "name"
+    CREATED_AT = "created_at"
+    POST_COUNT = "post_count"

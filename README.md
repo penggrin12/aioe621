@@ -34,4 +34,7 @@ asyncio.run(main())
 - [x] `GET /posts.json` via `.posts.list`
 - [x] `GET /posts/{id}.json` via `.posts.get`
 - [x] `GET /posts/random.json` via `.posts.random`
-- [x] `GET /tags.json` via `.tags.list` and `.tags.get` and `tags.get_by_name`
+- [x] `GET /tags.json` via `.tags.list` and `tags.get_by_name`
+- [x] `GET /tags/{id}.json` via `.tags.get`
+- [x] `GET /pools.json` via `.pools.list`
+- [x] `GET /pools/{id}.json` via `.pools.get`
