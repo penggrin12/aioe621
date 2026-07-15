@@ -56,15 +56,15 @@ class PostTags(APIModel):
     @cached_property
     def all(self) -> Sequence[str]:
         return (
-            self.general
-            + self.artist
-            + self.contributor
-            + self.copyright
-            + self.character
-            + self.species
-            + self.invalid
-            + self.meta
-            + self.lore
+            tuple(self.general)
+            + tuple(self.artist)
+            + tuple(self.contributor)
+            + tuple(self.copyright)
+            + tuple(self.character)
+            + tuple(self.species)
+            + tuple(self.invalid)
+            + tuple(self.meta)
+            + tuple(self.lore)
         )
 
 
