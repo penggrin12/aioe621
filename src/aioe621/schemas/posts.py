@@ -1,30 +1,13 @@
 ﻿from datetime import datetime
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Literal, NamedTuple, TypeVar
+from typing import Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import Field
 
-if TYPE_CHECKING:
-    from aioe621 import Client
+from aioe621.schemas.base import APIModel
 
 _T = TypeVar("_T")
-
-
-class APIModel(BaseModel):
-    _client: "Client" = PrivateAttr()  # technically should be nullable
-
-    model_config = ConfigDict(
-        frozen=True,
-        ignored_types=(cached_property,),
-        strict=True,
-        extra="forbid",
-    )
-
-
-class Auth(NamedTuple):
-    username: str
-    api_key: str
 
 
 class FileDimensions(APIModel):
@@ -196,8 +179,3 @@ class Post(APIModel):
     @property
     def url(self) -> str | None:
         return self.file.url
-
-
-class _ErrorResponse(APIModel):
-    success: Literal[False]
-    reason: str

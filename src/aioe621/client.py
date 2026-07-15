@@ -1,5 +1,5 @@
 ﻿import typing
-from typing import overload
+from typing import NamedTuple, overload
 
 import httpx
 from pydantic import TypeAdapter
@@ -11,10 +11,12 @@ from aioe621.exceptions import (
     AuthenticationError,
     NotFoundError,
 )
-from aioe621.schemas import APIModel, _ErrorResponse
+from aioe621.schemas.base import APIModel, _ErrorResponse
 
-if typing.TYPE_CHECKING:
-    from aioe621.schemas import Auth
+
+class Auth(NamedTuple):
+    username: str
+    api_key: str
 
 
 class Client:

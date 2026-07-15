@@ -3,7 +3,7 @@
 from pydantic import TypeAdapter
 
 from aioe621.endpoints.endpoint import Endpoint
-from aioe621.schemas import Post
+from aioe621.schemas.posts import Post
 
 
 class Posts(Endpoint):

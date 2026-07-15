@@ -14,7 +14,7 @@ The API is considered unstable for minor version increments until 1.0.0
 
 ```python
 from aioe621 import Client, Auth
-from aioe621.schemas import Post
+from aioe621.schemas.posts import Post
 import asyncio
 
 # authentication is only needed for some endpoints
