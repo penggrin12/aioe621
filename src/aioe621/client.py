@@ -2,7 +2,7 @@
 from typing import overload
 
 import httpx
-from pydantic import BaseModel, TypeAdapter
+from pydantic import TypeAdapter
 
 from aioe621 import endpoints
 from aioe621.exceptions import (
@@ -11,10 +11,10 @@ from aioe621.exceptions import (
     AuthenticationError,
     NotFoundError,
 )
-from aioe621.schemas import _ErrorResponse
+from aioe621.schemas import APIModel, _ErrorResponse
 
 if typing.TYPE_CHECKING:
-    from .schemas import Auth
+    from aioe621.schemas import Auth
 
 
 class Client:
@@ -78,8 +78,25 @@ class Client:
 
         raise self._find_error(response)
 
-    _MT = typing.TypeVar("_MT", bound="BaseModel")
+    _MT = typing.TypeVar("_MT", bound="APIModel")
     _T = typing.TypeVar("_T")
+
+    def _inject_client(self, obj: _T) -> _T:
+        if isinstance(obj, APIModel):
+            obj.__dict__["_client"] = self
+            typ: type[APIModel] = type(obj)
+
+            for field_name in typ.model_fields.keys():
+                field = getattr(obj, field_name)
+                if isinstance(field, APIModel):
+                    self._inject_client(field)
+        elif isinstance(obj, (list, set, tuple)):
+            for item in obj:
+                self._inject_client(item)
+        elif isinstance(obj, dict):
+            for value in obj.values():
+                self._inject_client(value)
+        return obj
 
     @overload
     async def _request_model(
@@ -92,18 +109,11 @@ class Client:
     ) -> _MT: ...
 
     async def _request_model(
-        self,
-        model: type[_MT] | TypeAdapter[_T],
-        method: str,
-        url: str,
-        **kwargs,
+        self, model: type[_MT] | TypeAdapter[_T], method: str, url: str, **kwargs
     ) -> _MT | _T:
-        json: str = await self._request(
-            method=method,
-            url=url,
-            **kwargs,
+        json: str = await self._request(method=method, url=url, **kwargs)
+        return self._inject_client(
+            model.validate_json(json)
+            if isinstance(model, TypeAdapter)
+            else model.model_validate_json(json)
         )
-        if isinstance(model, TypeAdapter):
-            return model.validate_json(json, strict=True)
-        else:
-            return model.model_validate_json(json, strict=True)

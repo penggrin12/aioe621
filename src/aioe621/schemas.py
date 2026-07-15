@@ -1,12 +1,19 @@
 ﻿from datetime import datetime
 from enum import Enum
 from functools import cached_property
-from typing import Literal, NamedTuple
+from typing import TYPE_CHECKING, Literal, NamedTuple, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+
+if TYPE_CHECKING:
+    from aioe621 import Client
+
+_T = TypeVar("_T")
 
 
 class APIModel(BaseModel):
+    _client: "Client" = PrivateAttr()  # technically should be nullable
+
     model_config = ConfigDict(
         frozen=True,
         ignored_types=(cached_property,),
@@ -25,13 +32,17 @@ class FileDimensions(APIModel):
     height: int
 
 
-class BaseFile(FileDimensions):
+class File(FileDimensions):
     url: str | None
 
 
 class PreviewFile(FileDimensions):
     jpg: str | None
     webp: str | None
+
+    @property
+    def url(self) -> str | None:
+        return self.jpg or self.webp
 
 
 class FilesMeta(APIModel):
@@ -89,7 +100,7 @@ class PostRating(str, Enum):
     EXPLICIT = "e"
 
 
-class VideoFile(BaseFile):
+class VideoFile(File):
     fps: float
     codec: str  # TODO: "vp9" or "avc1.4D401E" or ...?
     size: int
@@ -111,10 +122,14 @@ class Video(APIModel):
     variants: VideoVariants
     samples: VideoSamples
 
+    @property
+    def url(self) -> str | None:
+        return self.original.url
+
 
 class PostFiles(APIModel):
     meta: FilesMeta
-    original: BaseFile
+    original: File
     preview: PreviewFile
     sample: PreviewFile
     video: Video | None = None
@@ -161,6 +176,26 @@ class Post(APIModel):
     sources: tuple[str, ...]
     description: str
     tags: PostTags
+
+    async def fetch_children(self) -> tuple["Post", ...]:
+        return await self._client.posts.list(f"parent:{self.id}")
+
+    async def fetch_parent(self) -> "Post | None":
+        if not self.relationships.parent_id:
+            return None
+        return await self._client.posts.get(id=self.relationships.parent_id)
+
+    @property
+    def score(self) -> PostScore:
+        return self.stats.score
+
+    @property
+    def file(self) -> VideoFile | File:
+        return self.files.video.original if self.files.video else self.files.original
+
+    @property
+    def url(self) -> str | None:
+        return self.file.url
 
 
 class _ErrorResponse(APIModel):

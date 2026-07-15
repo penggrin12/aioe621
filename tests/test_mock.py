@@ -9,7 +9,7 @@ from aioe621 import Auth, Client
 from aioe621.exceptions import NotFoundError
 from aioe621.schemas import Post, PostRating
 
-MOCK_POST_JSON = '{"id":4842101,"created_at":"2024-06-10T10:52:11.177+03:00","updated_at":"2026-07-14T21:10:59.412+03:00","change_seq":77116893,"files":{"meta":{"md5":"1610e96ca2e0af6b7c5e06b03cda83c8","ext":"png","size":113245,"duration":null,"has_sample":false},"original":{"width":380,"height":380,"url":"https://static1.e621.net/data/16/10/1610e96ca2e0af6b7c5e06b03cda83c8.png"},"preview":{"width":256,"height":256,"jpg":"https://static1.e621.net/data/preview/16/10/1610e96ca2e0af6b7c5e06b03cda83c8.jpg","webp":"https://static1.e621.net/data/preview/16/10/1610e96ca2e0af6b7c5e06b03cda83c8.webp"},"sample":{"width":380,"height":380,"jpg":"https://static1.e621.net/data/16/10/1610e96ca2e0af6b7c5e06b03cda83c8.png","webp":"https://static1.e621.net/data/16/10/1610e96ca2e0af6b7c5e06b03cda83c8.png"}},"uploader_id":1349007,"uploader_name":"keysmasher123","approver_id":45665,"stats":{"score":{"up":3807,"down":-33,"total":3774},"fav_count":4527,"is_favorited":false,"vote":0,"comment_count":93,"hotness":3980.442383324771},"flags":{"pending":false,"flagged":false,"note_locked":false,"status_locked":false,"rating_locked":false,"deleted":false},"has":{"parent":false,"children":false,"active_children":false,"notes":false,"sample":false},"relationships":{"parent_id":null,"children":[]},"pools":[],"rating":"s","locked_tags":[],"sources":["https://x.com/akeivi_official/status/1799453243799666869","https://pbs.twimg.com/media/GPjxL0mXgAAsaEt?format=png&name=orig"],"description":"me fr","tags":{"general":["ambiguous_gender","black_eyes","eye_bags","feral","fur","half-closed_eyes","humor","looking_at_viewer","narrowed_eyes","papyrus_(font)","pink_background","pink_nose","quadruped","shitpost","simple_background","solo","sparkles","text","the_truth","tired_eyes","white_body","white_fur"],"artist":["akeivi"],"contributor":[],"copyright":[],"character":["cansado_(akeivi)"],"species":["domestic_cat","felid","feline","felis","mammal"],"invalid":[],"meta":["1:1","2024","aliasing","digital_media_(artwork)","english_text","lol_comments","low_res","meme","reaction_image","rotoscoping"],"lore":[]}}'
+MOCK_POST_JSON = '{"id":6543578,"created_at":"2026-07-13T17:36:26.837+03:00","updated_at":"2026-07-15T02:29:27.631+03:00","change_seq":78095660,"files":{"meta":{"md5":"077e4bbffe0ea5d5acb0fca479de8fdd","ext":"png","size":36622,"duration":null,"has_sample":true},"original":{"width":1745,"height":1698,"url":"https://static1.e621.net/data/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.png"},"preview":{"width":263,"height":256,"jpg":"https://static1.e621.net/data/preview/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.jpg","webp":"https://static1.e621.net/data/preview/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.webp"},"sample":{"width":874,"height":850,"jpg":"https://static1.e621.net/data/sample/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.jpg","webp":"https://static1.e621.net/data/sample/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.webp"}},"uploader_id":94865,"uploader_name":"Strikerman","approver_id":null,"stats":{"score":{"up":35,"down":-1,"total":34},"fav_count":36,"is_favorited":false,"vote":0,"comment_count":1,"hotness":4131.053207706494},"flags":{"pending":false,"flagged":false,"note_locked":false,"status_locked":false,"rating_locked":false,"deleted":false},"has":{"parent":true,"children":false,"active_children":false,"notes":false,"sample":true},"relationships":{"parent_id":6543578,"children":[]},"pools":[],"rating":"s","locked_tags":[],"sources":["https://x.com/DalueArt/status/2076512463059894388","https://pbs.twimg.com/media/HNFBBh6aUAA4DA5?format=png&name=orig"],"description":"The secret 3rd option","tags":{"general":["anthro","anthro_on_anthro","bedroom_eyes","black_collar","black_eyes","black_nose","blue_eyes","blush","bodily_fluids","collar","duo","emanata","exposed_shoulder","eye_contact","floppy_ears","grin","half-closed_eyes","hand_on_chest","heart_symbol","intraspecies","looking_at_another","male","male/male","narrowed_eyes","nervous","nervous_smile","pupils","seductive","selfcest","side_view","simple_background","smile","square_crossover","surprised","sweat","white_background"],"artist":["dalueart"],"contributor":[],"copyright":[],"character":["dalue_(dalueart)"],"species":["canid","canine","canis","domestic_dog","mammal"],"invalid":[],"meta":["hi_res"],"lore":[]}}'
 MOCK_404_JSON = '{"success":false,"reason":"not found"}'
 
 MOCK_USERNAME, MOCK_API_KEY = "coolUsername", "coolApiKey"
@@ -39,33 +39,33 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
 
     @respx.mock
     async def test_posts_get(self) -> None:
-        url = f"{self.client.E621_BASE_URL}/posts/4842101.json"
+        url = f"{self.client.E621_BASE_URL}/posts/6543578.json"
         route = respx.get(url).mock(
             return_value=httpx.Response(200, text=MOCK_POST_JSON)
         )
 
-        post = await self.client.posts.get(id=4842101)
+        post = await self.client.posts.get(id=6543578)
 
         self.assertTrue(route.called)
         request = route.calls.last.request
         self.assertEqual(request.headers.get("User-Agent"), self.client.user_agent)
 
         self.assertIsInstance(post, Post)
-        self.assertEqual(post.id, 4842101)
+        self.assertEqual(post.id, 6543578)
         self.assertEqual(post.files.meta.ext, "png")
-        self.assertEqual(post.files.meta.size, 113245)
-        self.assertEqual(post.stats.score.down, -33)
+        self.assertEqual(post.files.meta.size, 36622)
+        self.assertEqual(post.stats.score.up, 35)
         self.assertIsInstance(post.tags.artist, tuple)
-        self.assertIn("akeivi", post.tags.artist)
-        self.assertEqual(post.description, "me fr")
+        self.assertIn("dalueart", post.tags.artist)
+        self.assertEqual(post.description, "The secret 3rd option")
         self.assertEqual(post.rating, PostRating.SAFE)
 
     @respx.mock
     async def test_posts_get_immutability(self) -> None:
-        url = f"{self.client.E621_BASE_URL}/posts/4842101.json"
+        url = f"{self.client.E621_BASE_URL}/posts/6543578.json"
         respx.get(url).mock(return_value=httpx.Response(200, text=MOCK_POST_JSON))
 
-        post = await self.client.posts.get(id=4842101)
+        post = await self.client.posts.get(id=6543578)
 
         with self.assertRaises(ValidationError):
             # pyrefly: ignore [read-only]
@@ -93,6 +93,16 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
             await self.client.posts.get(id=-10)
 
         self.assertEqual(len(respx.calls), 0)
+
+    @respx.mock
+    async def test_posts_fetch_stuff(self) -> None:
+        url = f"{self.client.E621_BASE_URL}/posts/6543578.json"
+        respx.get(url).mock(return_value=httpx.Response(200, text=MOCK_POST_JSON))
+
+        # the og post parent is not actually the same
+        # but it's easier to mock this way
+        post = await self.client.posts.get(id=6543578)
+        self.assertEqual(await post.fetch_parent(), post)
 
     async def asyncTearDown(self) -> None:
         await self.client.session.aclose()
