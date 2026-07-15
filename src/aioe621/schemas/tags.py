@@ -1,4 +1,5 @@
 ﻿from datetime import datetime
+from typing import Sequence
 
 from pydantic import field_validator
 
@@ -15,7 +16,7 @@ class Tag(APIModel):
     id: int
     name: str
     post_count: int
-    related_tags: tuple[RelatedTag, ...]
+    related_tags: Sequence[RelatedTag]
     related_tags_updated_at: datetime
     category: TagCategory
     is_locked: bool
@@ -24,12 +25,12 @@ class Tag(APIModel):
 
     @field_validator("related_tags", mode="before")
     @classmethod
-    def split_tags(cls, value: str):
-        words = value.split(" ")
-        related = []
+    def split_tags(cls, value: str) -> Sequence[RelatedTag]:
+        words: list[str] = value.split(" ")
+        related: list[RelatedTag] = []
         while len(words) >= 2:
             related.append(RelatedTag(name=words.pop(0), relatedness=int(words.pop(0))))
-        return tuple(related)
+        return related
 
     def __str__(self) -> str:
         return self.name

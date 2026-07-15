@@ -1,4 +1,6 @@
-﻿from pydantic import TypeAdapter
+﻿from typing import Sequence
+
+from pydantic import TypeAdapter
 
 from aioe621.endpoints.endpoint import Endpoint
 from aioe621.enums import TagSortOrder
@@ -17,9 +19,9 @@ class Tags(Endpoint):
         has_artist: bool | None = None,
         limit: int | None = None,
         page: int | None = None,
-    ) -> tuple[Tag, ...]:
+    ) -> Sequence[Tag]:
         return await self._request_model(
-            TypeAdapter(tuple[Tag, ...]),
+            TypeAdapter(Sequence[Tag]),
             "GET",
             "/tags.json",
             **{
@@ -40,5 +42,5 @@ class Tags(Endpoint):
         self,
         name: str,
     ) -> Tag | None:
-        tags: tuple[Tag, ...] = await self.list(query=name, limit=1)
+        tags: Sequence[Tag] = await self.list(query=name, limit=1)
         return tags[0] if len(tags) > 0 else None

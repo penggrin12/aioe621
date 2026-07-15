@@ -1,6 +1,6 @@
 ﻿from datetime import datetime
 from functools import cached_property
-from typing import Literal, TypeVar
+from typing import Literal, Sequence, TypeVar
 
 from pydantic import Field
 
@@ -43,18 +43,18 @@ class PostScore(APIModel):
 
 
 class PostTags(APIModel):
-    general: tuple[str, ...]
-    artist: tuple[str, ...]
-    contributor: tuple[str, ...]
-    copyright: tuple[str, ...]
-    character: tuple[str, ...]
-    species: tuple[str, ...]
-    invalid: tuple[str, ...]
-    meta: tuple[str, ...]
-    lore: tuple[str, ...]
+    general: Sequence[str]
+    artist: Sequence[str]
+    contributor: Sequence[str]
+    copyright: Sequence[str]
+    character: Sequence[str]
+    species: Sequence[str]
+    invalid: Sequence[str]
+    meta: Sequence[str]
+    lore: Sequence[str]
 
     @cached_property
-    def all(self) -> tuple[str, ...]:
+    def all(self) -> Sequence[str]:
         return (
             self.general
             + self.artist
@@ -131,7 +131,7 @@ class PostHas(APIModel):
 
 class PostRelationships(APIModel):
     parent_id: int | None
-    children: tuple[int, ...]
+    children: Sequence[int]
 
 
 class Post(APIModel):
@@ -147,14 +147,14 @@ class Post(APIModel):
     flags: PostFlags
     has: PostHas
     relationships: PostRelationships
-    pools: tuple[int, ...]
+    pools: Sequence[int]
     rating: PostRating
-    locked_tags: tuple[str, ...]
-    sources: tuple[str, ...]
+    locked_tags: Sequence[str]
+    sources: Sequence[str]
     description: str
     tags: PostTags
 
-    async def fetch_children(self) -> tuple["Post", ...]:
+    async def fetch_children(self) -> Sequence["Post"]:
         return await self._client.posts.list(f"parent:{self.id}")
 
     async def fetch_parent(self) -> "Post | None":

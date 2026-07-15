@@ -1,5 +1,6 @@
 ﻿import base64
 import unittest
+from typing import Sequence
 
 import httpx
 import respx
@@ -57,7 +58,8 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         request = route.calls.last.request
         self.assertEqual(request.headers.get("User-Agent"), MOCK_USERAGENT)
 
-        self.assertIsInstance(posts, tuple)
+        self.assertIsInstance(posts, Sequence)
+        self.assertNotIsInstance(posts, str)
         self.assertEqual(len(posts), 1)
 
         post = posts[0]
@@ -66,7 +68,8 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(post.files.meta.ext, "png")
         self.assertEqual(post.files.meta.size, 36622)
         self.assertEqual(post.stats.score.up, 35)
-        self.assertIsInstance(post.tags.artist, tuple)
+        self.assertIsInstance(post.tags.artist, Sequence)
+        self.assertNotIsInstance(post.tags.artist, str)
         self.assertIn("dalueart", post.tags.artist)
         self.assertEqual(post.description, "The secret 3rd option")
         self.assertEqual(post.rating, PostRating.SAFE)
@@ -145,7 +148,8 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         )
         tags = await self.client.tags.list(query="canine", limit=1)
 
-        self.assertIsInstance(tags, tuple)
+        self.assertIsInstance(tags, Sequence)
+        self.assertNotIsInstance(tags, str)
         self.assertEqual(len(tags), 1)
 
         tag = tags[0]
@@ -154,7 +158,8 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(tag.id, 1068)
         self.assertEqual(tag.name, "canine")
         self.assertEqual(tag.post_count, 1611254)
-        self.assertIsInstance(tag.related_tags, tuple)
+        self.assertIsInstance(tag.related_tags, Sequence)
+        self.assertNotIsInstance(tag.related_tags, str)
         self.assertEqual(len(tag.related_tags), 25)
         self.assertEqual(tag.related_tags[24], RelatedTag(name="balls", relatedness=85))
 

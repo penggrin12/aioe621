@@ -1,4 +1,4 @@
-﻿import typing
+﻿from typing import TYPE_CHECKING, Sequence
 
 from pydantic import TypeAdapter
 
@@ -6,7 +6,7 @@ from aioe621.endpoints.endpoint import Endpoint
 from aioe621.enums import PostSortOrder
 from aioe621.schemas.posts import Post
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from aioe621.endpoints.endpoint import TagsType
 
 
@@ -18,9 +18,9 @@ class Posts(Endpoint):
         order: PostSortOrder | None = None,
         limit: int | None = None,
         page: int | None = None,
-    ) -> tuple[Post, ...]:
+    ) -> Sequence[Post]:
         return await self._request_model(
-            TypeAdapter(tuple[Post, ...]),
+            TypeAdapter(Sequence[Post]),
             "GET",
             "/posts.json",
             tags=self._flatten_tags(tags) + (f" order:{order}" if order else ""),

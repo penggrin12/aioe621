@@ -1,5 +1,4 @@
 ﻿import typing
-from typing import NamedTuple, overload
 
 import httpx
 from pydantic import TypeAdapter
@@ -14,7 +13,7 @@ from aioe621.exceptions import (
 from aioe621.schemas.base import APIModel, _ErrorResponse
 
 
-class Auth(NamedTuple):
+class Auth(typing.NamedTuple):
     username: str
     api_key: str
 
@@ -94,20 +93,22 @@ class Client:
                 field = getattr(obj, field_name)
                 if isinstance(field, APIModel):
                     self._inject_client(field)
-        elif isinstance(obj, (list, set, tuple)):
-            for item in obj:
-                self._inject_client(item)
-        elif isinstance(obj, dict):
+        elif isinstance(obj, typing.Mapping):
             for value in obj.values():
                 self._inject_client(value)
+        elif isinstance(obj, typing.Sequence) and not isinstance(
+            obj, (str, bytes, bytearray)
+        ):
+            for item in obj:
+                self._inject_client(item)
         return obj
 
-    @overload
+    @typing.overload
     async def _request_model(
         self, model: TypeAdapter[_T], method: str, url: str, **kwargs
     ) -> _T: ...
 
-    @overload
+    @typing.overload
     async def _request_model(
         self, model: type[_MT], method: str, url: str, **kwargs
     ) -> _MT: ...
