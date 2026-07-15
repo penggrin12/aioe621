@@ -1,10 +1,10 @@
 ﻿from datetime import datetime
-from enum import Enum
 from functools import cached_property
 from typing import Literal, TypeVar
 
 from pydantic import Field
 
+from aioe621.enums import PostRating
 from aioe621.schemas.base import APIModel
 
 _T = TypeVar("_T")
@@ -75,12 +75,6 @@ class PostFlags(APIModel):
     status_locked: bool
     rating_locked: bool
     deleted: bool
-
-
-class PostRating(str, Enum):
-    SAFE = "s"
-    QUESTIONABLE = "q"
-    EXPLICIT = "e"
 
 
 class VideoFile(File):

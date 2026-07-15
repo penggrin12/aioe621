@@ -1,26 +1,29 @@
-﻿from typing import Iterable
+﻿import typing
 
 from pydantic import TypeAdapter
 
 from aioe621.endpoints.endpoint import Endpoint
+from aioe621.enums import PostSortOrder
 from aioe621.schemas.posts import Post
+
+if typing.TYPE_CHECKING:
+    from aioe621.endpoints.endpoint import TagsType
 
 
 class Posts(Endpoint):
     async def list(
         self,
-        tags: Iterable[str] | str,
+        tags: "TagsType",
+        *,
+        order: PostSortOrder | None = None,
         limit: int | None = None,
         page: int | None = None,
     ) -> tuple[Post, ...]:
-        if not isinstance(tags, str):
-            tags = " ".join(tags)
-
         return await self._request_model(
             TypeAdapter(tuple[Post, ...]),
             "GET",
             "/posts.json",
-            tags=tags,
+            tags=self._flatten_tags(tags) + (f" order:{order}" if order else ""),
             limit=limit,
             page=page,
             v2=True,

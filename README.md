@@ -31,7 +31,7 @@ client = Client(
 
 
 async def main() -> None:
-    post: Post = await client.posts.get(id=5937863)
+    post: Post = await client.posts.get(5937863)
     print(f"i love {post.tags.artist[0]}!!!")
 
 
@@ -43,3 +43,4 @@ asyncio.run(main())
 - [x] `GET /posts.json` via `.posts.list`
 - [x] `GET /posts/{id}.json` via `.posts.get`
 - [x] `GET /posts/random.json` via `.posts.random`
+- [x] `GET /tags.json` via `.tags.list` and `.tags.get`

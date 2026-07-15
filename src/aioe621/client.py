@@ -42,6 +42,7 @@ class Client:
         )
 
         self.posts = endpoints.Posts(self)
+        self.tags = endpoints.Tags(self)
 
     def _get_headers(self) -> dict[str, str]:
         return {"User-Agent": self.user_agent}

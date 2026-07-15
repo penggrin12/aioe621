@@ -8,8 +8,11 @@ from pydantic import ValidationError
 from aioe621 import Auth, Client
 from aioe621.exceptions import NotFoundError
 from aioe621.schemas.posts import Post, PostRating
+from aioe621.schemas.tags import RelatedTag, Tag
 
 MOCK_POST_JSON = '{"id":6543578,"created_at":"2026-07-13T17:36:26.837+03:00","updated_at":"2026-07-15T02:29:27.631+03:00","change_seq":78095660,"files":{"meta":{"md5":"077e4bbffe0ea5d5acb0fca479de8fdd","ext":"png","size":36622,"duration":null,"has_sample":true},"original":{"width":1745,"height":1698,"url":"https://static1.e621.net/data/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.png"},"preview":{"width":263,"height":256,"jpg":"https://static1.e621.net/data/preview/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.jpg","webp":"https://static1.e621.net/data/preview/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.webp"},"sample":{"width":874,"height":850,"jpg":"https://static1.e621.net/data/sample/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.jpg","webp":"https://static1.e621.net/data/sample/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.webp"}},"uploader_id":94865,"uploader_name":"Strikerman","approver_id":null,"stats":{"score":{"up":35,"down":-1,"total":34},"fav_count":36,"is_favorited":false,"vote":0,"comment_count":1,"hotness":4131.053207706494},"flags":{"pending":false,"flagged":false,"note_locked":false,"status_locked":false,"rating_locked":false,"deleted":false},"has":{"parent":true,"children":false,"active_children":false,"notes":false,"sample":true},"relationships":{"parent_id":6543578,"children":[]},"pools":[],"rating":"s","locked_tags":[],"sources":["https://x.com/DalueArt/status/2076512463059894388","https://pbs.twimg.com/media/HNFBBh6aUAA4DA5?format=png&name=orig"],"description":"The secret 3rd option","tags":{"general":["anthro","anthro_on_anthro","bedroom_eyes","black_collar","black_eyes","black_nose","blue_eyes","blush","bodily_fluids","collar","duo","emanata","exposed_shoulder","eye_contact","floppy_ears","grin","half-closed_eyes","hand_on_chest","heart_symbol","intraspecies","looking_at_another","male","male/male","narrowed_eyes","nervous","nervous_smile","pupils","seductive","selfcest","side_view","simple_background","smile","square_crossover","surprised","sweat","white_background"],"artist":["dalueart"],"contributor":[],"copyright":[],"character":["dalue_(dalueart)"],"species":["canid","canine","canis","domestic_dog","mammal"],"invalid":[],"meta":["hi_res"],"lore":[]}}'
+MOCK_TAGS_JSON = '[{"id":1068,"name":"canine","post_count":1611254,"related_tags":"canid 300 canine 300 mammal 300 anthro 257 hi_res 208 male 206 fur 175 canis 174 genitals 168 female 160 clothing 134 solo 127 duo 126 hair 119 penis 113 tail 110 breasts 107 bodily_fluids 105 nude 95 text 95 digital_media_(artwork) 93 nipples 92 wolf 91 fox 89 balls 85","related_tags_updated_at":"2026-07-08T07:00:44.477-04:00","category":5,"is_locked":false,"created_at":"2020-03-05T05:49:37.994-05:00","updated_at":"2026-07-08T07:00:44.477-04:00"}]'
+
 MOCK_404_JSON = '{"success":false,"reason":"not found"}'
 
 MOCK_USERNAME, MOCK_API_KEY = "coolUsername", "coolApiKey"
@@ -37,10 +40,11 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         resp = next(self.client.session.auth.auth_flow(httpx.Request("", "")))
         self.assertEqual(resp.headers["Authorization"], MOCK_AUTHORIZATION_HEADER)
 
+    # posts
+
     @respx.mock
     async def test_posts_get(self) -> None:
-        url = f"{self.client.E621_BASE_URL}/posts/6543578.json"
-        route = respx.get(url).mock(
+        route = respx.get(f"{self.client.E621_BASE_URL}/posts/6543578.json").mock(
             return_value=httpx.Response(200, text=MOCK_POST_JSON)
         )
 
@@ -62,8 +66,9 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
 
     @respx.mock
     async def test_posts_get_immutability(self) -> None:
-        url = f"{self.client.E621_BASE_URL}/posts/6543578.json"
-        respx.get(url).mock(return_value=httpx.Response(200, text=MOCK_POST_JSON))
+        respx.get(f"{self.client.E621_BASE_URL}/posts/6543578.json").mock(
+            return_value=httpx.Response(200, text=MOCK_POST_JSON)
+        )
 
         post = await self.client.posts.get(id=6543578)
 
@@ -74,8 +79,8 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
     @respx.mock
     async def test_posts_get_404(self) -> None:
         status_code, method = 404, "GET"
-        url = f"{self.client.E621_BASE_URL}/posts/999999999.json"
 
+        url = f"{self.client.E621_BASE_URL}/posts/999999999.json"
         route = respx.request(method, url).mock(
             return_value=httpx.Response(status_code, text=MOCK_404_JSON)
         )
@@ -103,6 +108,38 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         # but it's easier to mock this way
         post = await self.client.posts.get(id=6543578)
         self.assertEqual(await post.fetch_parent(), post)
+
+    # tags
+
+    @respx.mock
+    async def test_tags_list(self) -> None:
+        respx.get(f"{self.client.E621_BASE_URL}/tags.json").mock(
+            return_value=httpx.Response(200, text=MOCK_TAGS_JSON)
+        )
+        tags = await self.client.tags.list(query="canine", limit=1)
+
+        self.assertIsInstance(tags, tuple)
+        self.assertEqual(len(tags), 1)
+
+        tag = tags[0]
+        self.assertIsInstance(tag, Tag)
+
+        self.assertEqual(tag.id, 1068)
+        self.assertEqual(tag.name, "canine")
+        self.assertEqual(tag.post_count, 1611254)
+        self.assertIsInstance(tag.related_tags, tuple)
+        self.assertEqual(len(tag.related_tags), 25)
+        self.assertEqual(tag.related_tags[24], RelatedTag(name="balls", relatedness=85))
+
+    @respx.mock
+    async def test_tags_get(self) -> None:
+        respx.get(f"{self.client.E621_BASE_URL}/tags.json").mock(
+            return_value=httpx.Response(200, text=MOCK_TAGS_JSON)
+        )
+        tag = await self.client.tags.get(name="canine")
+
+        self.assertIsInstance(tag, Tag)
+        self.assertEqual(tag.id, 1068)
 
     async def asyncTearDown(self) -> None:
         await self.client.session.aclose()
