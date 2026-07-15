@@ -25,15 +25,16 @@ class Client:
 
     def __init__(
         self,
+        *,
+        user_agent: str,
         auth: "Auth | None" = None,
         base_url: str = E621_BASE_URL,
-        user_agent: str | None = None,
         session: httpx.AsyncClient | None = None,
         **session_kwargs,
     ) -> None:
         self.auth: "Auth | None" = auth
         self.user_agent: str = (
-            user_agent or "penggrin12/aioe621@github penggrin@telegram"
+            user_agent.strip() or "penggrin12/aioe621@github penggrin@telegram"
         )
         self.session: httpx.AsyncClient = session or httpx.AsyncClient(
             base_url=base_url,

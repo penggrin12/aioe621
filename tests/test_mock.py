@@ -16,6 +16,7 @@ MOCK_TAGS_JSON = '[{"id":1068,"name":"canine","post_count":1611254,"related_tags
 
 MOCK_404_JSON = '{"success":false,"reason":"not found"}'
 
+MOCK_USERAGENT = "mock useragent/1.0"
 MOCK_USERNAME, MOCK_API_KEY = "coolUsername", "coolApiKey"
 MOCK_AUTHORIZATION_HEADER = "Basic " + base64.b64encode(
     f"{MOCK_USERNAME}:{MOCK_API_KEY}".encode(encoding="utf-8")
@@ -25,7 +26,7 @@ MOCK_AUTHORIZATION_HEADER = "Basic " + base64.b64encode(
 class MyTestCase(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.auth = Auth(MOCK_USERNAME, MOCK_API_KEY)
-        self.client = Client(auth=self.auth)
+        self.client = Client(user_agent=MOCK_USERAGENT, auth=self.auth)
 
     def test_auth(self) -> None:
         auth = Auth(MOCK_USERNAME, MOCK_API_KEY)
@@ -33,6 +34,7 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(auth.api_key, MOCK_API_KEY)
 
     def test_client_init(self) -> None:
+        self.assertEqual(self.client.user_agent, MOCK_USERAGENT)
         self.assertEqual(self.client.auth, self.auth)
         self.assertEqual(self.client.session.base_url, self.client.E621_BASE_URL)
 
@@ -53,7 +55,7 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(route.called)
         request = route.calls.last.request
-        self.assertEqual(request.headers.get("User-Agent"), self.client.user_agent)
+        self.assertEqual(request.headers.get("User-Agent"), MOCK_USERAGENT)
 
         self.assertIsInstance(posts, tuple)
         self.assertEqual(len(posts), 1)
