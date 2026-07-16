@@ -4,6 +4,7 @@ from pydantic import TypeAdapter
 
 from aioe621.endpoints.endpoint import Endpoint
 from aioe621.enums import PostSortOrder
+from aioe621.objects import TagSet
 from aioe621.schemas.posts import Post
 
 if TYPE_CHECKING:
@@ -23,7 +24,12 @@ class Posts(Endpoint):
             TypeAdapter(Sequence[Post]),
             "GET",
             "/posts.json",
-            tags=self._flatten_tags(tags) + (f" order:{order}" if order else ""),
+            tags=(
+                TagSet(tags)
+                .with_order(order)
+                .with_blacklist(self._client.blacklist)
+                .flatten()
+            ),
             limit=limit,
             page=page,
             v2=True,

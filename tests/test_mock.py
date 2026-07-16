@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from aioe621 import Auth, Client
 from aioe621.enums import PoolCategory
 from aioe621.exceptions import NotFoundError
+from aioe621.objects import TagSet
 from aioe621.schemas.pools import Pool
 from aioe621.schemas.posts import Post, PostRating
 from aioe621.schemas.tags import RelatedTag, Tag
@@ -73,7 +74,7 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(post.files.meta.ext, "png")
         self.assertEqual(post.files.meta.size, 36622)
         self.assertEqual(post.stats.score.up, 35)
-        self.assertIsInstance(post.tags.artist, Sequence)
+        self.assertIsInstance(post.tags.artist, TagSet)
         self.assertNotIsInstance(post.tags.artist, str)
         self.assertIn("dalueart", post.tags.artist)
         self.assertEqual(post.description, "The secret 3rd option")

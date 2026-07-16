@@ -1,9 +1,12 @@
-﻿from datetime import datetime
+﻿import typing
+from datetime import datetime
 from typing import Sequence
 
 from aioe621.enums import PoolCategory
 from aioe621.schemas.base import APIModel
-from aioe621.schemas.posts import Post
+
+if typing.TYPE_CHECKING:
+    from aioe621.schemas.posts import Post
 
 
 class Pool(APIModel):
@@ -19,5 +22,5 @@ class Pool(APIModel):
     post_ids: Sequence[int]
     post_count: int
 
-    async def fetch_posts(self) -> Sequence[Post]:
+    async def fetch_posts(self) -> Sequence["Post"]:
         return await self._client.posts.list(tags=f"pool:{self.id}")

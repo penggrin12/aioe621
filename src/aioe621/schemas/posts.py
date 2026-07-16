@@ -5,6 +5,7 @@ from typing import Literal, Sequence, TypeVar
 from pydantic import Field
 
 from aioe621.enums import PostRating
+from aioe621.objects import TagSet
 from aioe621.schemas.base import APIModel
 
 _T = TypeVar("_T")
@@ -43,28 +44,28 @@ class PostScore(APIModel):
 
 
 class PostTags(APIModel):
-    general: Sequence[str]
-    artist: Sequence[str]
-    contributor: Sequence[str]
-    copyright: Sequence[str]
-    character: Sequence[str]
-    species: Sequence[str]
-    invalid: Sequence[str]
-    meta: Sequence[str]
-    lore: Sequence[str]
+    general: TagSet
+    artist: TagSet
+    contributor: TagSet
+    copyright: TagSet
+    character: TagSet
+    species: TagSet
+    invalid: TagSet
+    meta: TagSet
+    lore: TagSet
 
     @cached_property
-    def all(self) -> Sequence[str]:
+    def all(self) -> TagSet:
         return (
-            tuple(self.general)
-            + tuple(self.artist)
-            + tuple(self.contributor)
-            + tuple(self.copyright)
-            + tuple(self.character)
-            + tuple(self.species)
-            + tuple(self.invalid)
-            + tuple(self.meta)
-            + tuple(self.lore)
+            self.general
+            + self.artist
+            + self.contributor
+            + self.copyright
+            + self.character
+            + self.species
+            + self.invalid
+            + self.meta
+            + self.lore
         )
 
 
