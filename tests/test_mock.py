@@ -30,7 +30,7 @@ MOCK_AUTHORIZATION_HEADER = "Basic " + base64.b64encode(
 ).decode(encoding="utf-8")
 
 
-class MyTestCase(unittest.IsolatedAsyncioTestCase):
+class TestClient(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.auth = Auth(MOCK_USERNAME, MOCK_API_KEY)
         self.client = Client(user_agent=MOCK_USERAGENT, auth=self.auth)
@@ -49,6 +49,15 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(self.client.session.auth)
         resp = next(self.client.session.auth.auth_flow(httpx.Request("", "")))
         self.assertEqual(resp.headers["Authorization"], MOCK_AUTHORIZATION_HEADER)
+
+    async def asyncTearDown(self) -> None:
+        await self.client.session.aclose()
+
+
+class TestEndpoints(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        self.auth = Auth(MOCK_USERNAME, MOCK_API_KEY)
+        self.client = Client(user_agent=MOCK_USERAGENT, auth=self.auth)
 
     # posts
 
