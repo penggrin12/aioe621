@@ -7,7 +7,7 @@ import respx
 from pydantic import BaseModel, ValidationError
 
 from aioe621 import Auth, Client
-from aioe621.enums import PoolCategory
+from aioe621.enums import PoolCategory, PostSortOrder
 from aioe621.exceptions import NotFoundError
 from aioe621.objects import TagSet
 from aioe621.schemas.pools import Pool
@@ -68,6 +68,12 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
         )
 
         posts = await self.client.posts.list(tags="nervous", limit=1)
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams(
+                {"tags": "nervous", "limit": 1, "v2": True, "mode": "extended"}
+            ),
+        )
 
         self.assertTrue(route.called)
         request = route.calls.last.request
@@ -91,31 +97,42 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
 
     @respx.mock
     async def test_posts_get(self) -> None:
-        respx.get(f"{self.client.E621_BASE_URL}/posts/6543578.json").mock(
+        route = respx.get(f"{self.client.E621_BASE_URL}/posts/6543578.json").mock(
             return_value=httpx.Response(200, text=MOCK_POST_JSON)
         )
         post = await self.client.posts.get(id=6543578)
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams({"v2": True, "mode": "extended"}),
+        )
 
         self.assertIsInstance(post, Post)
         self.assertEqual(post.id, 6543578)
 
     @respx.mock
     async def test_posts_random(self) -> None:
-        respx.get(f"{self.client.E621_BASE_URL}/posts/random.json").mock(
+        route = respx.get(f"{self.client.E621_BASE_URL}/posts/random.json").mock(
             return_value=httpx.Response(200, text=MOCK_POST_JSON)
         )
         post = await self.client.posts.random()
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams({"v2": True, "mode": "extended"}),
+        )
 
         self.assertIsInstance(post, Post)
         self.assertEqual(post.id, 6543578)
 
     @respx.mock
     async def test_posts_get_immutability(self) -> None:
-        respx.get(f"{self.client.E621_BASE_URL}/posts/6543578.json").mock(
+        route = respx.get(f"{self.client.E621_BASE_URL}/posts/6543578.json").mock(
             return_value=httpx.Response(200, text=MOCK_POST_JSON)
         )
-
         post = await self.client.posts.get(id=6543578)
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams({"v2": True, "mode": "extended"}),
+        )
 
         with self.assertRaises(ValidationError):
             # pyrefly: ignore [read-only]
@@ -134,6 +151,10 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
             await self.client.posts.get(id=999999999)
 
         self.assertTrue(route.called)
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams({"v2": True, "mode": "extended"}),
+        )
         self.assertIn(str(status_code), str(cm.exception))
         self.assertIn(f"{method} {url}", str(cm.exception))
 
@@ -147,21 +168,31 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
     @respx.mock
     async def test_posts_fetch_stuff(self) -> None:
         url = f"{self.client.E621_BASE_URL}/posts/6543578.json"
-        respx.get(url).mock(return_value=httpx.Response(200, text=MOCK_POST_JSON))
+        route = respx.get(url).mock(
+            return_value=httpx.Response(200, text=MOCK_POST_JSON)
+        )
 
         # the og post parent is not actually the same
         # but it's easier to mock this way
         post = await self.client.posts.get(id=6543578)
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams({"v2": True, "mode": "extended"}),
+        )
         self.assertEqual(await post.fetch_parent(), post)
 
     # tags
 
     @respx.mock
     async def test_tags_list(self) -> None:
-        respx.get(f"{self.client.E621_BASE_URL}/tags.json").mock(
+        route = respx.get(f"{self.client.E621_BASE_URL}/tags.json").mock(
             return_value=httpx.Response(200, text=MOCK_TAGS_JSON)
         )
         tags = await self.client.tags.list(query="canine", limit=1)
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams({"search[name_matches]": "canine", "limit": 1}),
+        )
 
         self.assertIsInstance(tags, Sequence)
         self.assertNotIsInstance(tags, str)
@@ -180,20 +211,25 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
 
     @respx.mock
     async def test_tags_get(self) -> None:
-        respx.get(f"{self.client.E621_BASE_URL}/tags/1068.json").mock(
+        route = respx.get(f"{self.client.E621_BASE_URL}/tags/1068.json").mock(
             return_value=httpx.Response(200, text=MOCK_TAG_JSON)
         )
         tag = await self.client.tags.get(id=1068)
+        self.assertEqual(len(route.calls.last.request.url.params), 0)
 
         self.assertIsInstance(tag, Tag)
         self.assertEqual(tag.name, "canine")
 
     @respx.mock
     async def test_tags_get_by_name(self) -> None:
-        respx.get(f"{self.client.E621_BASE_URL}/tags.json").mock(
+        route = respx.get(f"{self.client.E621_BASE_URL}/tags.json").mock(
             return_value=httpx.Response(200, text=MOCK_TAGS_JSON)
         )
         tag = await self.client.tags.get_by_name("canine")
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams({"search[name_matches]": "canine", "limit": 1}),
+        )
 
         self.assertIsInstance(tag, Tag)
         self.assertEqual(tag.id, 1068)
@@ -205,9 +241,17 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
         route = respx.get(f"{self.client.E621_BASE_URL}/pools.json").mock(
             return_value=httpx.Response(200, text=MOCK_POOLS_JSON)
         )
-
         pools = await self.client.pools.list(
             name="TinyGayPirate_-_Random-word-tober", limit=1
+        )
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams(
+                {
+                    "search[name_matches]": "TinyGayPirate_-_Random-word-tober",
+                    "limit": 1,
+                }
+            ),
         )
 
         self.assertTrue(route.called)
@@ -246,10 +290,11 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
 
     @respx.mock
     async def test_pools_get(self) -> None:
-        respx.get(f"{self.client.E621_BASE_URL}/pools/36878.json").mock(
+        route = respx.get(f"{self.client.E621_BASE_URL}/pools/36878.json").mock(
             return_value=httpx.Response(200, text=MOCK_POOL_JSON)
         )
         pool = await self.client.pools.get(id=36878)
+        self.assertEqual(len(route.calls.last.request.url.params), 0)
 
         self.assertIsInstance(pool, Pool)
         self.assertEqual(pool.id, 36878)
@@ -267,7 +312,7 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
 
     @respx.mock
     async def test_pools_fetch_posts(self) -> None:
-        respx.get(f"{self.client.E621_BASE_URL}/pools/36878.json").mock(
+        pool_route = respx.get(f"{self.client.E621_BASE_URL}/pools/36878.json").mock(
             return_value=httpx.Response(200, text=MOCK_POOL_JSON)
         )
         posts_route = respx.get(f"{self.client.E621_BASE_URL}/posts.json").mock(
@@ -275,7 +320,12 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
         )
 
         pool = await self.client.pools.get(id=36878)
+        self.assertEqual(len(pool_route.calls.last.request.url.params), 0)
         posts = await pool.fetch_posts()
+        self.assertEqual(
+            posts_route.calls.last.request.url.params,
+            httpx.QueryParams({"tags": "pool:36878", "v2": True, "mode": "extended"}),
+        )
 
         self.assertTrue(posts_route.called)
         self.assertIn("tags=pool%3A36878", str(posts_route.calls.last.request.url))
@@ -341,10 +391,12 @@ class TestTagSet(unittest.TestCase):
 
     def test_with_order(self) -> None:
         tags = TagSet(["fox"])
-
         tags.with_order("score")
-
         self.assertIn("order:score", tags)
+
+        tags = TagSet(["dog"])
+        tags.with_order(PostSortOrder.META_TAGS)
+        self.assertIn("order:meta_tags", tags)
 
     def test_with_order_none(self) -> None:
         tags = TagSet(["fox"])
@@ -355,10 +407,12 @@ class TestTagSet(unittest.TestCase):
 
     def test_with_rating(self) -> None:
         tags = TagSet(["fox"])
+        tags.with_rating("s")
+        self.assertIn("rating:s", tags)
 
-        tags.with_rating("safe")
-
-        self.assertIn("rating:safe", tags)
+        tags = TagSet(["dog"])
+        tags.with_rating(PostRating.EXPLICIT)
+        self.assertIn("rating:e", tags)
 
     def test_with_rating_none(self) -> None:
         tags = TagSet(["fox"])
