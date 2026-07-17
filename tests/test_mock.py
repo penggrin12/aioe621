@@ -4,7 +4,7 @@ from typing import Sequence
 
 import httpx
 import respx
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from aioe621 import Auth, Client
 from aioe621.enums import PoolCategory
@@ -278,6 +278,135 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self) -> None:
         await self.client.session.aclose()
+
+
+class TestTagSet(unittest.TestCase):
+    def test_init_empty(self) -> None:
+        tags = TagSet()
+
+        self.assertIsInstance(tags, set)
+        self.assertEqual(tags, set())
+
+    def test_init_from_string(self) -> None:
+        tags = TagSet("fox")
+
+        self.assertEqual(tags, {"fox"})
+
+    def test_init_from_multiple_tags(self) -> None:
+        tags = TagSet(["fox", "dog", "fox"])
+
+        self.assertEqual(tags, {"fox", "dog"})
+
+    def test_init_from_tag(self) -> None:
+        tag = Tag.model_validate_json(MOCK_TAG_JSON)
+
+        tags = TagSet(tag)
+        self.assertEqual(tags, {"canine"})
+
+    def test_add(self) -> None:
+        first = TagSet(["fox", "dog"])
+        second = TagSet(["cat", "dog"])
+
+        result = first + second
+
+        self.assertIsInstance(result, TagSet)
+        self.assertEqual(result, {"fox", "dog", "cat"})
+        self.assertEqual(first, {"fox", "dog"})
+        self.assertEqual(second, {"cat", "dog"})
+
+    def test_with_tag(self) -> None:
+        tags = TagSet(["fox"])
+
+        result = tags.with_tag("dog")
+
+        self.assertIs(result, tags)
+        self.assertEqual(tags, {"fox", "dog"})
+
+    def test_with_tags(self) -> None:
+        tags = TagSet(["fox"])
+
+        result = tags.with_tags(["dog", "cat"])
+
+        self.assertIs(result, tags)
+        self.assertEqual(tags, {"fox", "dog", "cat"})
+
+    def test_with_order(self) -> None:
+        tags = TagSet(["fox"])
+
+        tags.with_order("score")
+
+        self.assertIn("order:score", tags)
+
+    def test_with_order_none(self) -> None:
+        tags = TagSet(["fox"])
+
+        tags.with_order(None)
+
+        self.assertEqual(tags, {"fox"})
+
+    def test_with_rating(self) -> None:
+        tags = TagSet(["fox"])
+
+        tags.with_rating("safe")
+
+        self.assertIn("rating:safe", tags)
+
+    def test_with_rating_none(self) -> None:
+        tags = TagSet(["fox"])
+
+        tags.with_rating(None)
+
+        self.assertEqual(tags, {"fox"})
+
+    def test_with_blacklist(self) -> None:
+        tags = TagSet(["fox"])
+
+        tags.with_blacklist([["dog", "cat"], ["bird"]])
+
+        self.assertIn("-( cat dog )", tags)
+        self.assertIn("-( bird )", tags)
+
+    def test_negate(self) -> None:
+        tags = TagSet(["fox", "-dog"])
+
+        result = tags.negate()
+
+        self.assertEqual(result, {"-fox", "-dog"})
+
+    def test_flatten_sorted(self) -> None:
+        tags = TagSet(["zebra", "apple", "dog"])
+
+        self.assertEqual(tags.flatten(), "apple dog zebra")
+
+    def test_flatten_unsorted(self) -> None:
+        tags = TagSet(["zebra", "apple"])
+
+        result = tags.flatten(do_sort=False)
+
+        self.assertIn(result, ("zebra apple", "apple zebra"))
+
+    def test_str(self) -> None:
+        tags = TagSet(["zebra", "apple"])
+
+        self.assertEqual(str(tags), "apple zebra")
+
+    def test_pydantic_validation(self) -> None:
+        class Model(BaseModel):
+            tags: TagSet
+
+        model = Model(tags=["fox", "dog"])
+
+        self.assertIsInstance(model.tags, TagSet)
+        self.assertEqual(model.tags, {"fox", "dog"})
+
+    def test_pydantic_validation_string(self) -> None:
+        class Model(BaseModel):
+            tags: TagSet
+
+        model = Model(tags={"fox"})
+
+        self.assertIsInstance(model.tags, TagSet)
+        self.assertEqual(model.tags, {"fox"})
 
 
 if __name__ == "__main__":
