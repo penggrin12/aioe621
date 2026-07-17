@@ -67,7 +67,9 @@ Negated tags are useful for filtering out things you don't want:
 
 ```python
 # with the same species, but no humans
-query = post.tags.species.with_blacklist("human")
+# each list item here is like a blacklist line in e621
+query = post.tags.species.with_blacklist(["human"])
+# or you could just do .with_tag("-human")
 ```
 
 Which for a post of a dog with a cat produces the equivalent of `canine feline -human`
@@ -97,16 +99,16 @@ favorites = anthro_pups_with_fangs.with_rating(rating)
 
 ### All TagSet methods
 
-| Method             | Purpose              |
-|--------------------|----------------------|
-| `+`                | Combine tag groups   |
-| `with_tag()`       | Add a tag            |
-| `with_tags()`      | Add multiple tags    |
-| `with_blacklist()` | Add and negate tags  |
-| `negate()`         | Negate tags          |
-| `with_order()`     | Add search ordering  |
-| `with_rating()`    | Add search rating    |
-| `flatten()`        | Flatten into a `str` |
+| Method             | Purpose                                                 |
+|--------------------|---------------------------------------------------------|
+| `+`                | Combine tag groups                                      |
+| `with_tag()`       | Add a tag                                               |
+| `with_tags()`      | Add multiple tags                                       |
+| `with_blacklist()` | Add and negate lists of TagSet, like the e621 blacklist |
+| `negate()`         | Negate tags                                             |
+| `with_order()`     | Add search ordering                                     |
+| `with_rating()`    | Add search rating                                       |
+| `flatten()`        | Flatten into a `str`                                    |
 
 ## Schema helpers
 

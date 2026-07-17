@@ -32,7 +32,7 @@ class Client:
         user_agent: str,
         auth: "Auth | None" = None,
         base_url: str = E621_BASE_URL,
-        blacklist: "TagSet | None" = None,
+        blacklist: "list[TagSet] | None" = None,
         session: httpx.AsyncClient | None = None,
         **session_kwargs,
     ) -> None:
@@ -50,7 +50,7 @@ class Client:
             **session_kwargs,
         )
 
-        self.blacklist: "TagSet" = blacklist or TagSet()
+        self.blacklist: list["TagSet"] = blacklist or []
 
         self.posts = endpoints.Posts(self)
         self.tags = endpoints.Tags(self)

@@ -38,10 +38,8 @@ class TagSet(set[str]):
             return self.with_tag(f"order:{order}")
         return self
 
-    def with_blacklist(self, blacklist: "TagsType") -> "TagSet":
-        if not isinstance(blacklist, TagSet):
-            blacklist = TagSet(blacklist)
-        return self.with_tags(blacklist.negate())
+    def with_blacklist(self, blacklist: "typing.Iterable[TagsType]") -> "TagSet":
+        return self.with_tags(f"-( {TagSet(rule).flatten()} )" for rule in blacklist)
 
     def with_rating(self, rating: "PostRating | str | None") -> "TagSet":
         if rating is not None:
@@ -51,8 +49,8 @@ class TagSet(set[str]):
     def negate(self) -> "TagSet":
         return TagSet(tag if tag.startswith("-") else "-" + tag for tag in self)
 
-    def flatten(self) -> str:
-        return " ".join(self)
+    def flatten(self, do_sort: bool = True) -> str:
+        return " ".join(sorted(self) if do_sort else self)
 
     def __str__(self) -> str:
         return self.flatten()
