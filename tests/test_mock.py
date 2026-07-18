@@ -276,23 +276,12 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(list(pool.post_ids), [4341598])
 
     @respx.mock
-    async def test_pools_list_invalid_args(self) -> None:
-        # Pools endpoint requires at least id, name, or description
-        with self.assertRaises(ValueError) as cm:
-            await self.client.pools.list(limit=10)
-
-        self.assertEqual(
-            str(cm.exception), "Either id or name or description is required."
-        )
-        self.assertEqual(len(respx.calls), 0)
-
-    @respx.mock
     async def test_pools_list_invalid_id(self) -> None:
         with self.assertRaises(ValueError) as cm:
             await self.client.pools.list(id=-5)
 
         self.assertEqual(
-            str(cm.exception), "The pool ID must not be less than or equal to zero."
+            str(cm.exception), "id must be in the range [1..] inclusive (given: -5)."
         )
         self.assertEqual(len(respx.calls), 0)
 
@@ -314,7 +303,7 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
             await self.client.pools.get(id=0)
 
         self.assertEqual(
-            str(cm.exception), "The pool ID must not be less than or equal to zero."
+            str(cm.exception), "id must be in the range [1..] inclusive (given: 0)."
         )
         self.assertEqual(len(respx.calls), 0)
 

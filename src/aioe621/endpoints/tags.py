@@ -52,8 +52,7 @@ class Tags(Endpoint):
         self,
         id: int,
     ) -> Tag:
-        if id <= 0:
-            raise ValueError("The tag ID must not be less than or equal to zero.")
+        self._assert_in_range("id", id, (1, None))
         return await self._request_model(
             Tag,
             "GET",

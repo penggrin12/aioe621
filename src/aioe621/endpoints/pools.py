@@ -10,10 +10,10 @@ from aioe621.schemas.pools import Pool
 class Pools(Endpoint):
     async def list(
         self,
+        *,
         id: int | None = None,
         name: str | None = None,
         description: str | None = None,
-        *,
         category: PoolCategory | None = None,
         creator_id: int | None = None,
         creator_name: str | None = None,
@@ -22,10 +22,7 @@ class Pools(Endpoint):
         limit: int | None = None,
         page: int | None = None,
     ) -> Sequence[Pool]:
-        if (id is None) and (name is None) and (description is None):
-            raise ValueError("Either id or name or description is required.")
-        if id and (id <= 0):
-            raise ValueError("The pool ID must not be less than or equal to zero.")
+        self._assert_in_range("id", id, (1, None))
 
         return await self._request_model(
             TypeAdapter(Sequence[Pool]),
@@ -51,6 +48,5 @@ class Pools(Endpoint):
         self,
         id: int,
     ) -> Pool:
-        if id <= 0:
-            raise ValueError("The pool ID must not be less than or equal to zero.")
+        self._assert_in_range("id", id, (1, None))
         return await self._request_model(Pool, "GET", f"/pools/{id}.json")
