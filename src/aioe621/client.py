@@ -1,4 +1,6 @@
 ﻿import typing
+from os import PathLike
+from pathlib import Path
 
 import httpx
 from pydantic import TypeAdapter
@@ -12,9 +14,6 @@ from aioe621.exceptions import (
 )
 from aioe621.objects import TagSet
 from aioe621.schemas.base import APIModel, _ErrorResponse
-
-if typing.TYPE_CHECKING:
-    from aioe621.endpoints.endpoint import TagType
 
 
 class Auth(typing.NamedTuple):
@@ -60,7 +59,7 @@ class Client:
         return {"User-Agent": self.user_agent}
 
     @staticmethod
-    def _find_error(response: httpx.Response) -> APIError:
+    def _json_error(response: httpx.Response) -> APIError:
         error = _ErrorResponse.model_validate_json(response.text)
         match error.reason.strip().casefold():
             case "not found":
@@ -69,6 +68,36 @@ class Client:
                 return AccessDeniedError(response)
             case _:
                 return APIError(error.reason.capitalize(), response)
+
+    @staticmethod
+    def _status_error(response: httpx.Response) -> APIError:
+        match response.status_code:
+            case httpx.codes.NOT_FOUND:
+                return NotFoundError(response)
+            case httpx.codes.FORBIDDEN | httpx.codes.UNAUTHORIZED:
+                return AccessDeniedError(response)
+            case _:
+                return APIError(
+                    httpx.codes.get_reason_phrase(response.status_code) + ".", response
+                )
+
+    @staticmethod
+    def _find_error(response: httpx.Response, *, has_json: bool) -> APIError:
+        return (Client._json_error if has_json else Client._status_error)(response)
+
+    async def _download_file(self, *, url: str) -> bytes:
+        response: httpx.Response = await self.session.get(
+            url=url, headers=self._get_headers()
+        )
+        if response.is_error:
+            raise self._find_error(response, has_json=False)
+
+        return response.content
+
+    async def _download_file_to(self, *, url: str, save_to: PathLike | None) -> None:
+        data: bytes = await self._download_file(url=url)
+
+        Path(save_to or url.rsplit("/", 1)[-1]).write_bytes(data)
 
     async def _request(
         self,
@@ -81,7 +110,7 @@ class Client:
         if authorized and (not self.auth):
             raise AuthenticationError(method, url)
 
-        response = await self.session.request(
+        response: httpx.Response = await self.session.request(
             method=method,
             url=url,
             params={k: v for k, v in params.items() if v is not None},
@@ -91,7 +120,10 @@ class Client:
         if not response.is_error:
             return response.text
 
-        raise self._find_error(response)
+        raise self._find_error(
+            response,
+            has_json=((response.text is not None) and response.text.startswith("{")),
+        )
 
     _MT = typing.TypeVar("_MT", bound="APIModel")
     _T = typing.TypeVar("_T")

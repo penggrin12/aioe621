@@ -1,5 +1,6 @@
 ﻿from datetime import datetime
 from functools import cached_property
+from os import PathLike
 from typing import Literal, Sequence, TypeVar
 
 from pydantic import Field
@@ -19,6 +20,16 @@ class FileDimensions(APIModel):
 class File(FileDimensions):
     url: str | None
 
+    async def download(self) -> bytes:
+        if not self.url:
+            raise ValueError(".url is required to download")
+        return await self._client._download_file(url=self.url)
+
+    async def download_to(self, save_to: PathLike | None = None) -> None:
+        if not self.url:
+            raise ValueError(".url is required to download")
+        await self._client._download_file_to(url=self.url, save_to=save_to)
+
 
 class PreviewFile(FileDimensions):
     jpg: str | None
@@ -27,6 +38,16 @@ class PreviewFile(FileDimensions):
     @property
     def url(self) -> str | None:
         return self.jpg or self.webp
+
+    async def download(self) -> bytes:
+        if not self.url:
+            raise ValueError(".url is required to download")
+        return await self._client._download_file(url=self.url)
+
+    async def download_to(self, save_to: PathLike | None = None) -> None:
+        if not self.url:
+            raise ValueError(".url is required to download")
+        await self._client._download_file_to(url=self.url, save_to=save_to)
 
 
 class FilesMeta(APIModel):
@@ -170,6 +191,22 @@ class Post(APIModel):
     @property
     def file(self) -> VideoFile | File:
         return self.files.video.original if self.files.video else self.files.original
+
+    @property
+    def preview(self) -> PreviewFile:
+        return self.files.preview
+
+    @property
+    def sample(self) -> PreviewFile:
+        return self.files.sample
+
+    @property
+    def video(self) -> Video | None:
+        return self.files.video
+
+    @property
+    def video_file(self) -> VideoFile | None:
+        return self.files.video.original if self.files.video else None
 
     @property
     def url(self) -> str | None:
