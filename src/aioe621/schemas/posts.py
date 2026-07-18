@@ -1,13 +1,15 @@
 ﻿from datetime import datetime
 from functools import cached_property
-from os import PathLike
-from typing import Literal, Sequence, TypeVar
+from typing import TYPE_CHECKING, Literal, Sequence, TypeVar
 
 from pydantic import Field
 
 from aioe621.enums import PostRating
 from aioe621.objects import TagSet
 from aioe621.schemas.base import APIModel
+
+if TYPE_CHECKING:
+    from _typeshed import StrPath
 
 _T = TypeVar("_T")
 
@@ -25,7 +27,7 @@ class File(FileDimensions):
             raise ValueError(".url is required to download")
         return await self._client._download_file(url=self.url)
 
-    async def download_to(self, save_to: PathLike | None = None) -> None:
+    async def download_to(self, save_to: "StrPath | None" = None) -> None:
         if not self.url:
             raise ValueError(".url is required to download")
         await self._client._download_file_to(url=self.url, save_to=save_to)
@@ -44,7 +46,7 @@ class PreviewFile(FileDimensions):
             raise ValueError(".url is required to download")
         return await self._client._download_file(url=self.url)
 
-    async def download_to(self, save_to: PathLike | None = None) -> None:
+    async def download_to(self, save_to: "StrPath | None" = None) -> None:
         if not self.url:
             raise ValueError(".url is required to download")
         await self._client._download_file_to(url=self.url, save_to=save_to)

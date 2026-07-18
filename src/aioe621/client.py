@@ -1,5 +1,4 @@
 ﻿import typing
-from os import PathLike
 from pathlib import Path
 
 import httpx
@@ -14,6 +13,9 @@ from aioe621.exceptions import (
 )
 from aioe621.objects import TagSet
 from aioe621.schemas.base import APIModel, _ErrorResponse
+
+if typing.TYPE_CHECKING:
+    from _typeshed import StrPath
 
 
 class Auth(typing.NamedTuple):
@@ -94,7 +96,7 @@ class Client:
 
         return response.content
 
-    async def _download_file_to(self, *, url: str, save_to: PathLike | None) -> None:
+    async def _download_file_to(self, *, url: str, save_to: "StrPath | None") -> None:
         data: bytes = await self._download_file(url=url)
 
         Path(save_to or url.rsplit("/", 1)[-1]).write_bytes(data)
