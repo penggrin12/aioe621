@@ -1,6 +1,7 @@
 ﻿import base64
 import unittest
 from typing import Sequence
+from unittest.mock import patch
 
 import httpx
 import respx
@@ -28,6 +29,13 @@ MOCK_USERNAME, MOCK_API_KEY = "coolUsername", "coolApiKey"
 MOCK_AUTHORIZATION_HEADER = "Basic " + base64.b64encode(
     f"{MOCK_USERNAME}:{MOCK_API_KEY}".encode(encoding="utf-8")
 ).decode(encoding="utf-8")
+
+MOCK_FILE_URL = (
+    "https://static1.e621.net/data/preview/d1/04/d104cd937d09732b04085dcf8c6bf9f3.jpg"
+)
+MOCK_FILE_BYTES: bytes = base64.b64decode(
+    "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA="
+)
 
 
 class TestClient(unittest.IsolatedAsyncioTestCase):
@@ -334,6 +342,54 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(posts), 1)
         self.assertIsInstance(posts[0], Post)
         self.assertEqual(posts[0].id, 6543578)
+
+    async def asyncTearDown(self) -> None:
+        await self.client.session.aclose()
+
+
+class TestDownloading(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        self.client = Client(user_agent=MOCK_USERAGENT)
+
+    @respx.mock
+    async def test_download_bytes(self) -> None:
+        route = respx.get(MOCK_FILE_URL).mock(
+            return_value=httpx.Response(200, content=MOCK_FILE_BYTES)
+        )
+
+        data = await self.client._download_file(url=MOCK_FILE_URL)
+        self.assertTrue(route.called)
+        self.assertEqual(
+            route.calls.last.request.headers.get("User-Agent"), MOCK_USERAGENT
+        )
+
+        self.assertIsInstance(data, bytes)
+        self.assertEqual(data, MOCK_FILE_BYTES)
+
+    @respx.mock
+    @patch("aioe621.client.Path")
+    async def test_download_file_none(self, mock_path_class) -> None:
+        respx.get(MOCK_FILE_URL).mock(
+            return_value=httpx.Response(200, content=MOCK_FILE_BYTES)
+        )
+
+        await self.client._download_file_to(url=MOCK_FILE_URL, save_to=None)
+
+        mock_path_class.assert_called_once_with(MOCK_FILE_URL.rsplit("/", 1)[-1])
+
+        mock_path_instance = mock_path_class.return_value
+        mock_path_instance.write_bytes.assert_called_once_with(MOCK_FILE_BYTES)
+
+    @respx.mock
+    @patch("aioe621.client.Path")
+    async def test_download_file_custom(self, mock_path_class) -> None:
+        respx.get(MOCK_FILE_URL).mock(
+            return_value=httpx.Response(200, content=MOCK_FILE_BYTES)
+        )
+
+        path = "test123.jpg"
+        await self.client._download_file_to(url=MOCK_FILE_URL, save_to=path)
+        mock_path_class.assert_called_once_with(path)
 
     async def asyncTearDown(self) -> None:
         await self.client.session.aclose()
