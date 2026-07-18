@@ -1,6 +1,6 @@
 [project]
 name = "aioe621"
-version = "0.8.0"
+version = "0.9.0"
 description = "A simple asynchronous httpx+pydantic wrapper over the E621's API"
 license = { file = "LICENSE" }
 readme = "README.md"
@@ -34,7 +34,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.21",
+    "ruff>=0.15.22",
     "pyrefly>=0.60.0",
     "respx>=0.23.1",
 ]
