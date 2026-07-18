@@ -141,13 +141,18 @@ print(posts[0].rating)  # PostRating.EXPLICIT
 
 ## Currently implemented API endpoints
 
-| e621 API                 | aioe621                             |
-|--------------------------|-------------------------------------|
-| `GET /posts.json`        | `.posts.list`                       |
-| `GET /posts/{id}.json`   | `.posts.get`                        |
-| `GET /posts/random.json` | `.posts.random`                     |
-| `GET /tags.json`         | `.tags.list` and `tags.get_by_name` |
-| `GET /tags/{id}.json`    | `.tags.get`                         |
-| `GET /pools.json`        | `.pools.list`                       |
-| `GET /pools/{id}.json`   | `.pools.get`                        |
+| e621 API                      | aioe621                             |
+|-------------------------------|-------------------------------------|
+| `GET /posts.json`             | `.posts.list`                       |
+| `GET /posts/{id}.json`        | `.posts.get`                        |
+| `GET /posts/random.json`      | `.posts.random`                     |
+| `GET /popular.json`           | `.posts.popular`                    |
+| `GET /tags.json`              | `.tags.list` and `tags.get_by_name` |
+| `GET /tags/{id}.json`         | `.tags.get`                         |
+| `GET /pools.json`             | `.pools.list`                       |
+| `GET /pools/{id}.json`        | `.pools.get`                        |
+| `GET /forum_posts.json`       | `.forum.posts`                      |
+| `GET /forum_posts/{id}.json`  | `.forum.post`                       |
+| `GET /forum_topics.json`      | `.forum.topics`                     |
+| `GET /forum_topics/{id}.json` | `.forum.topic`                      |
 
