@@ -68,3 +68,30 @@ class PoolSortOrder(str, Enum):
     NAME = "name"
     CREATED_AT = "created_at"
     POST_COUNT = "post_count"
+
+
+class ForumCategory(int, Enum):
+    GENERAL = 1
+    TAG_ALIASES_IMPLICATIONS = 2
+    ART = 3
+    OFF_TOPIC = 5
+    TOOLS_APPS = 9
+    TAGS_WIKIS = 10
+    BUGS_FEATURES = 11
+
+
+class ForumTopicSortOrder(str, Enum):
+    ID_ASCENDING = "id_asc"
+    ID_DESCENDING = "id_desc"
+    STICKY = "sticky"
+
+
+class ForumPostSortOrder(str, Enum):
+    ID_ASCENDING = "id_asc"
+    ID_DESCENDING = "id_desc"
+
+
+class WarningType(str, Enum):
+    WARNING = "warning"
+    RECORD = "record"
+    BAN = "ban"

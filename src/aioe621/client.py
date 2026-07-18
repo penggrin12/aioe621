@@ -56,6 +56,7 @@ class Client:
         self.posts = endpoints.Posts(self)
         self.tags = endpoints.Tags(self)
         self.pools = endpoints.Pools(self)
+        self.forum = endpoints.Forum(self)
 
     def _get_headers(self) -> dict[str, str]:
         return {"User-Agent": self.user_agent}
