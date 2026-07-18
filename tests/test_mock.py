@@ -189,6 +189,22 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(await post.fetch_parent(), post)
 
+    @respx.mock
+    async def test_posts_popular(self) -> None:
+        route = respx.get(f"{self.client.E621_BASE_URL}/popular.json").mock(
+            return_value=httpx.Response(200, text=MOCK_POSTS_JSON)
+        )
+
+        posts = await self.client.posts.popular()
+        self.assertEqual(
+            route.calls.last.request.url.params,
+            httpx.QueryParams({"v2": True, "mode": "extended"}),
+        )
+        self.assertIsInstance(posts, Sequence)
+        self.assertNotEqual(len(posts), 0)
+        self.assertIsInstance(posts[0], Post)
+        self.assertEqual(posts[0].id, 6543578)
+
     # tags
 
     @respx.mock

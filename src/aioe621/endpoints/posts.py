@@ -1,9 +1,10 @@
-﻿from typing import TYPE_CHECKING, Sequence
+﻿from datetime import date
+from typing import TYPE_CHECKING, Sequence
 
 from pydantic import TypeAdapter
 
 from aioe621.endpoints.endpoint import Endpoint
-from aioe621.enums import PostSortOrder
+from aioe621.enums import PopularScale, PostSortOrder
 from aioe621.objects import TagSet
 from aioe621.schemas.posts import Post
 
@@ -64,4 +65,19 @@ class Posts(Endpoint):
             "/posts/random.json",
             v2=True,
             mode="extended",
+        )
+
+    async def popular(
+        self,
+        date: date | None = None,
+        scale: PopularScale | None = None,
+    ) -> Sequence[Post]:
+        return await self._request_model(
+            TypeAdapter(Sequence[Post]),
+            "GET",
+            "/popular.json",
+            v2=True,
+            mode="extended",
+            date=date,
+            scale=scale,
         )

@@ -36,6 +36,12 @@ class PostSortOrder(str, Enum):
     MD5 = "md5"
 
 
+class PopularScale(str, Enum):
+    MONTH = "month"
+    WEEK = "week"
+    DAY = "day"
+
+
 class TagSortOrder(str, Enum):
     ID_ASCENDING = "id_asc"
     ID_DESCENDING = "id_desc"
