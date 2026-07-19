@@ -29,7 +29,7 @@ class Posts(Endpoint):
                 TagSet(tags)
                 .with_order(order)
                 .with_blacklist(self._client.blacklist)
-                .flatten()
+                .flattened()
             ),
             limit=limit,
             page=page,

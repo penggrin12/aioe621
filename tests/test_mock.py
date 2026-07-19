@@ -404,8 +404,8 @@ class TestTagSet(unittest.TestCase):
     def test_init_empty(self) -> None:
         tags = TagSet()
 
-        self.assertIsInstance(tags, set)
-        self.assertEqual(tags, set())
+        self.assertIsInstance(tags, frozenset)
+        self.assertEqual(tags, frozenset())
 
     def test_init_from_string(self) -> None:
         tags = TagSet("fox")
@@ -435,77 +435,59 @@ class TestTagSet(unittest.TestCase):
         self.assertEqual(second, {"cat", "dog"})
 
     def test_with_tag(self) -> None:
-        tags = TagSet(["fox"])
+        tags = TagSet(["fox"]).with_tag("dog")
 
-        result = tags.with_tag("dog")
-
-        self.assertIs(result, tags)
         self.assertEqual(tags, {"fox", "dog"})
 
     def test_with_tags(self) -> None:
-        tags = TagSet(["fox"])
+        tags = TagSet(["fox"]).with_tags(["dog", "cat"])
 
-        result = tags.with_tags(["dog", "cat"])
-
-        self.assertIs(result, tags)
         self.assertEqual(tags, {"fox", "dog", "cat"})
 
     def test_with_order(self) -> None:
-        tags = TagSet(["fox"])
-        tags.with_order("score")
+        tags = TagSet(["fox"]).with_order("score")
         self.assertIn("order:score", tags)
 
-        tags = TagSet(["dog"])
-        tags.with_order(PostSortOrder.META_TAGS)
+        tags = TagSet(["dog"]).with_order(PostSortOrder.META_TAGS)
         self.assertIn("order:meta_tags", tags)
 
     def test_with_order_none(self) -> None:
-        tags = TagSet(["fox"])
-
-        tags.with_order(None)
+        tags = TagSet(["fox"]).with_order(None)
 
         self.assertEqual(tags, {"fox"})
 
     def test_with_rating(self) -> None:
-        tags = TagSet(["fox"])
-        tags.with_rating("s")
+        tags = TagSet(["fox"]).with_rating("s")
         self.assertIn("rating:s", tags)
 
-        tags = TagSet(["dog"])
-        tags.with_rating(PostRating.EXPLICIT)
+        tags = TagSet(["dog"]).with_rating(PostRating.EXPLICIT)
         self.assertIn("rating:e", tags)
 
     def test_with_rating_none(self) -> None:
-        tags = TagSet(["fox"])
-
-        tags.with_rating(None)
+        tags = TagSet(["fox"]).with_rating(None)
 
         self.assertEqual(tags, {"fox"})
 
     def test_with_blacklist(self) -> None:
-        tags = TagSet(["fox"])
-
-        tags.with_blacklist([["dog", "cat"], ["bird"]])
+        tags = TagSet(["fox"]).with_blacklist([["dog", "cat"], ["bird"]])
 
         self.assertIn("-( cat dog )", tags)
         self.assertIn("-( bird )", tags)
 
     def test_negate(self) -> None:
-        tags = TagSet(["fox", "-dog"])
+        tags = TagSet(["fox", "-dog"]).negated()
 
-        result = tags.negate()
-
-        self.assertEqual(result, {"-fox", "-dog"})
+        self.assertEqual(tags, {"-fox", "-dog"})
 
     def test_flatten_sorted(self) -> None:
         tags = TagSet(["zebra", "apple", "dog"])
 
-        self.assertEqual(tags.flatten(), "apple dog zebra")
+        self.assertEqual(tags.flattened(), "apple dog zebra")
 
     def test_flatten_unsorted(self) -> None:
         tags = TagSet(["zebra", "apple"])
 
-        result = tags.flatten(do_sort=False)
+        result = tags.flattened(do_sort=False)
 
         self.assertIn(result, ("zebra apple", "apple zebra"))
 
@@ -531,6 +513,18 @@ class TestTagSet(unittest.TestCase):
 
         self.assertIsInstance(model.tags, TagSet)
         self.assertEqual(model.tags, {"fox"})
+
+    def test_pydantic_validation_nested(self) -> None:
+        class Model(BaseModel):
+            tags: TagSet
+
+        model = Model.model_validate_json('{"tags": ["fox", ["dog", "equine"]]}')
+
+        a = TagSet(model.tags)
+        a.flattened()
+
+        self.assertIsInstance(model.tags, TagSet)
+        self.assertEqual(model.tags, TagSet(["fox", TagSet(["dog", "equine"])]))
 
 
 if __name__ == "__main__":

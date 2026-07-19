@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
     from aioe621.schemas.tags import Tag
 
     TagType: TypeAlias = "str | Tag"
-    TagsType: TypeAlias = "TagSet | Iterable[TagType] | TagType"
+    TagsType: TypeAlias = "TagSet | Iterable[TagType | TagSet] | TagType"
 
 
 class Endpoint:

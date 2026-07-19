@@ -26,6 +26,8 @@ classifiers = [
 dependencies = [
     "httpx>=0.28.1",
     "pydantic>=2.13.4",
+    "regex>=2026.7.19",
+    "typing-extensions>=4.16.0",
 ]
 
 [build-system]

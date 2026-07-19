@@ -105,10 +105,10 @@ favorites = anthro_pups_with_fangs.with_rating(rating)
 | `with_tag()`       | Add a tag                                               |
 | `with_tags()`      | Add multiple tags                                       |
 | `with_blacklist()` | Add and negate lists of TagSet, like the e621 blacklist |
-| `negate()`         | Negate tags                                             |
+| `negated()`        | Negate tags                                             |
 | `with_order()`     | Add search ordering                                     |
 | `with_rating()`    | Add search rating                                       |
-| `flatten()`        | Flatten into a `str`                                    |
+| `flattened()`      | Flatten into a `str`                                    |
 
 ## Schema helpers
 
