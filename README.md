@@ -45,8 +45,8 @@ uv add aioe621
 
 ## TagSet
 
-`TagSet` is a small query-building helper around e621's tag syntax. It behaves mostly like a normal `set[str]`, but adds
-convenient methods for composing searches.
+`TagSet` is a small query-building helper around e621's tag syntax. It behaves mostly like a normal `set[str]`
+(it actually inherits from actually `frozenset[Tag]`), but adds convenient methods for composing searches.
 
 Using `TagSet` is not required. All endpoints that accept tags also work with other "Tag"-like or "Tag list"-like
 types (including plain strings and iterables of strings). `TagSet` is provided as a convenience for building, combining,
