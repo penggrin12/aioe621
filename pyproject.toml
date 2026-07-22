@@ -1,6 +1,6 @@
 [project]
 name = "aioe621"
-version = "0.9.0"
+version = "0.10.0"
 description = "A simple asynchronous httpx+pydantic wrapper over the E621's API"
 license = { file = "LICENSE" }
 readme = "README.md"
