@@ -4,10 +4,10 @@ if typing.TYPE_CHECKING:
     from typing import Iterable, TypeAlias
 
     from aioe621.client import Client
-    from aioe621.objects import TagSet
-    from aioe621.schemas.tags import Tag
+    from aioe621.objects import Tag, TagSet
+    from aioe621.schemas.tags import Tag as TagSchema
 
-    TagType: TypeAlias = "str | Tag"
+    TagType: TypeAlias = "str | Tag | TagSchema"
     TagsType: TypeAlias = "TagSet | Iterable[TagType | TagSet] | TagType"
 
 

@@ -10,10 +10,11 @@ from pydantic import BaseModel, ValidationError
 from aioe621 import Auth, Client
 from aioe621.enums import PoolCategory, PostSortOrder
 from aioe621.exceptions import NotFoundError
-from aioe621.objects import TagSet
+from aioe621.objects import Tag, TagSet
 from aioe621.schemas.pools import Pool
 from aioe621.schemas.posts import Post, PostRating
-from aioe621.schemas.tags import RelatedTag, Tag
+from aioe621.schemas.tags import RelatedTag
+from aioe621.schemas.tags import Tag as TagScheme
 
 MOCK_POST_JSON = '{"id":6543578,"created_at":"2026-07-13T17:36:26.837+03:00","updated_at":"2026-07-15T02:29:27.631+03:00","change_seq":78095660,"files":{"meta":{"md5":"077e4bbffe0ea5d5acb0fca479de8fdd","ext":"png","size":36622,"duration":null,"has_sample":true},"original":{"width":1745,"height":1698,"url":"https://static1.e621.net/data/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.png"},"preview":{"width":263,"height":256,"jpg":"https://static1.e621.net/data/preview/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.jpg","webp":"https://static1.e621.net/data/preview/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.webp"},"sample":{"width":874,"height":850,"jpg":"https://static1.e621.net/data/sample/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.jpg","webp":"https://static1.e621.net/data/sample/07/7e/077e4bbffe0ea5d5acb0fca479de8fdd.webp"}},"uploader_id":94865,"uploader_name":"Strikerman","approver_id":null,"stats":{"score":{"up":35,"down":-1,"total":34},"fav_count":36,"is_favorited":false,"vote":0,"comment_count":1,"hotness":4131.053207706494},"flags":{"pending":false,"flagged":false,"note_locked":false,"status_locked":false,"rating_locked":false,"deleted":false},"has":{"parent":true,"children":false,"active_children":false,"notes":false,"sample":true},"relationships":{"parent_id":6543578,"children":[]},"pools":[],"rating":"s","locked_tags":[],"sources":["https://x.com/DalueArt/status/2076512463059894388","https://pbs.twimg.com/media/HNFBBh6aUAA4DA5?format=png&name=orig"],"description":"The secret 3rd option","tags":{"general":["anthro","anthro_on_anthro","bedroom_eyes","black_collar","black_eyes","black_nose","blue_eyes","blush","bodily_fluids","collar","duo","emanata","exposed_shoulder","eye_contact","floppy_ears","grin","half-closed_eyes","hand_on_chest","heart_symbol","intraspecies","looking_at_another","male","male/male","narrowed_eyes","nervous","nervous_smile","pupils","seductive","selfcest","side_view","simple_background","smile","square_crossover","surprised","sweat","white_background"],"artist":["dalueart"],"contributor":[],"copyright":[],"character":["dalue_(dalueart)"],"species":["canid","canine","canis","domestic_dog","mammal"],"invalid":[],"meta":["hi_res"],"lore":[]}}'
 MOCK_POSTS_JSON = f"[{MOCK_POST_JSON}]"
@@ -223,7 +224,7 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(tags), 1)
 
         tag = tags[0]
-        self.assertIsInstance(tag, Tag)
+        self.assertIsInstance(tag, TagScheme)
 
         self.assertEqual(tag.id, 1068)
         self.assertEqual(tag.name, "canine")
@@ -241,7 +242,7 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
         tag = await self.client.tags.get(id=1068)
         self.assertEqual(len(route.calls.last.request.url.params), 0)
 
-        self.assertIsInstance(tag, Tag)
+        self.assertIsInstance(tag, TagScheme)
         self.assertEqual(tag.name, "canine")
 
     @respx.mock
@@ -255,7 +256,7 @@ class TestEndpoints(unittest.IsolatedAsyncioTestCase):
             httpx.QueryParams({"search[name_matches]": "canine", "limit": 1}),
         )
 
-        self.assertIsInstance(tag, Tag)
+        self.assertIsInstance(tag, TagScheme)
         self.assertEqual(tag.id, 1068)
 
     # pools
@@ -400,6 +401,142 @@ class TestDownloading(unittest.IsolatedAsyncioTestCase):
         await self.client.session.aclose()
 
 
+class TestTag(unittest.TestCase):
+    def test_init_plain(self) -> None:
+        tag = Tag("anthro")
+        self.assertEqual(tag.prefix, Tag.Prefix.NONE)
+        self.assertEqual(tag._raw, "anthro")
+
+        self.assertTrue(tag.is_plain)
+        self.assertFalse(tag.is_negated)
+        self.assertFalse(tag.is_or)
+        self.assertFalse(tag.is_group)
+
+    def test_init_negated(self) -> None:
+        tag = Tag("-canine")
+        self.assertEqual(tag.prefix, Tag.Prefix.NEGATIVE)
+        self.assertEqual(tag._raw, "canine")
+
+        self.assertTrue(tag.is_negated)
+        self.assertFalse(tag.is_plain)
+
+    def test_init_or(self) -> None:
+        tag = Tag("~feline")
+        self.assertEqual(tag.prefix, Tag.Prefix.OR)
+        self.assertEqual(tag._raw, "feline")
+        self.assertTrue(tag.is_or)
+
+    def test_init_group(self) -> None:
+        tag = Tag("-( fox dog )")
+        self.assertEqual(tag.prefix, Tag.Prefix.NEGATIVE)
+        self.assertTrue(tag.is_group)
+        self.assertIsInstance(tag._raw, TagSet)
+        self.assertEqual(tag._raw, TagSet(["fox", "dog"]))
+
+    def test_init_from_tag(self) -> None:
+        original = Tag("~wolf")
+        copied = Tag(original)
+        self.assertIs(original, copied)
+
+    def test_init_from_set(self) -> None:
+        tag = Tag({"cat", "dog"})
+        self.assertEqual(tag.prefix, Tag.Prefix.NONE)
+        self.assertTrue(tag.is_group)
+        self.assertEqual(tag._raw, TagSet(["cat", "dog"]))
+
+    def test_init_from_tag_schema(self) -> None:
+        from aioe621.schemas.tags import Tag as APITag
+
+        api_tag = APITag.model_validate_json(MOCK_TAG_JSON)
+
+        tag = Tag(api_tag)
+        self.assertEqual(tag.prefix, Tag.Prefix.NONE)
+        self.assertEqual(tag._raw, "canine")
+
+    def test_init_invalid(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError, "A tag cannot be None or an empty string"
+        ):
+            Tag("")
+        with self.assertRaisesRegex(
+            ValueError, "A tag cannot be None or an empty string"
+        ):
+            # pyrefly: ignore [bad-argument-type]
+            Tag(None)
+        with self.assertRaisesRegex(ValueError, "A tag cannot be parsed from"):
+            Tag(123)  # pyrefly: ignore [bad-argument-type]
+
+    def test_str(self) -> None:
+        self.assertEqual(str(Tag("fox")), "fox")
+        self.assertEqual(str(Tag("-fox")), "-fox")
+        self.assertEqual(str(Tag("~fox")), "~fox")
+
+        self.assertEqual(str(Tag("-( zebra apple )")), "-( apple zebra )")
+
+    def test_repr(self) -> None:
+        tag = Tag("-fox")
+        self.assertEqual(
+            repr(tag), f"Tag(prefix={repr(Tag.Prefix.NEGATIVE)}, raw='fox')"
+        )
+
+        group_tag = Tag("~( zebra apple )")
+        self.assertEqual(
+            repr(group_tag),
+            f"Tag(prefix={repr(Tag.Prefix.OR)}, raw={repr(TagSet(['apple', 'zebra']))})",
+        )
+
+    def test_equality(self) -> None:
+        tag = Tag("fox")
+        self.assertEqual(tag, Tag("fox"))
+        self.assertEqual(tag, "fox")
+        self.assertNotEqual(tag, Tag("-fox"))
+        self.assertNotEqual(tag, "-fox")
+        self.assertNotEqual(tag, ["fox"])
+
+    def test_equality_with_schema(self) -> None:
+        from aioe621.schemas.tags import Tag as APITag
+
+        api_tag = APITag.model_validate_json(MOCK_TAG_JSON)
+
+        self.assertEqual(Tag("canine"), api_tag)
+        self.assertNotEqual(Tag("fox"), api_tag)
+
+    def test_hash(self) -> None:
+        tag = Tag("-fox")
+        self.assertEqual(hash(tag), hash("-fox"))
+
+        tags_set = {Tag("fox"), Tag("-fox")}
+        self.assertIn(Tag("fox"), tags_set)
+        self.assertIn("-fox", tags_set)
+
+    def test_modifiers(self) -> None:
+        tag = Tag("fox")
+
+        neg = tag.as_negative()
+        self.assertEqual(neg.prefix, Tag.Prefix.NEGATIVE)
+        self.assertEqual(neg._raw, "fox")
+
+        or_tag = neg.as_or()
+        self.assertEqual(or_tag.prefix, Tag.Prefix.OR)
+        self.assertEqual(or_tag._raw, "fox")
+
+        plain = or_tag.as_no_prefix()
+        self.assertEqual(plain.prefix, Tag.Prefix.NONE)
+        self.assertEqual(plain._raw, "fox")
+
+        group_tag = Tag("-( cat dog )").as_or()
+        self.assertEqual(str(group_tag), "~( cat dog )")
+
+    def test_pydantic_validation(self) -> None:
+        class Model(BaseModel):
+            tag: Tag
+
+        model = Model(tag="-fox")
+
+        self.assertIsInstance(model.tag, Tag)
+        self.assertEqual(model.tag, Tag("-fox"))
+
+
 class TestTagSet(unittest.TestCase):
     def test_init_empty(self) -> None:
         tags = TagSet()
@@ -417,8 +554,8 @@ class TestTagSet(unittest.TestCase):
 
         self.assertEqual(tags, {"fox", "dog"})
 
-    def test_init_from_tag(self) -> None:
-        tag = Tag.model_validate_json(MOCK_TAG_JSON)
+    def test_init_from_tag_scheme(self) -> None:
+        tag = TagScheme.model_validate_json(MOCK_TAG_JSON)
 
         tags = TagSet(tag)
         self.assertEqual(tags, {"canine"})
@@ -446,10 +583,16 @@ class TestTagSet(unittest.TestCase):
 
     def test_with_order(self) -> None:
         tags = TagSet(["fox"]).with_order("score")
-        self.assertIn("order:score", tags)
+        self.assertEqual(tags, {"fox", "order:score"})
+
+        tags = TagSet(["cat"]).with_order("favcount", inverted=True)
+        self.assertEqual(tags, {"cat", "-order:favcount"})
 
         tags = TagSet(["dog"]).with_order(PostSortOrder.META_TAGS)
-        self.assertIn("order:meta_tags", tags)
+        self.assertEqual(tags, {"dog", "order:meta_tags"})
+
+        tags = TagSet(["zebra"]).with_order(PostSortOrder.TAGCOUNT, inverted=True)
+        self.assertEqual(tags, {"zebra", "-order:tagcount"})
 
     def test_with_order_none(self) -> None:
         tags = TagSet(["fox"]).with_order(None)
@@ -475,7 +618,7 @@ class TestTagSet(unittest.TestCase):
         self.assertIn("-( bird )", tags)
 
     def test_negate(self) -> None:
-        tags = TagSet(["fox", "-dog"]).negated()
+        tags = TagSet(["fox", "-dog"]).negated_tags()
 
         self.assertEqual(tags, {"-fox", "-dog"})
 
